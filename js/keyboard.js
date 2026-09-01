@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
-import { U, CASE_OUTLINE_L, PLATE_RECT_L, INSERTS_L } from './layout.js';
+import { U, CASE_OUTLINE_L, PLATE_POLY_L, INSERTS_L } from './layout.js';
 
 const CAP_PITCH = U;          // mm
 const CAP_SIZE = 16.2;        // mm base width, ~1.3mm gap like the real board
@@ -32,6 +32,101 @@ function makePrintBump() {
   return t;
 }
 
+// ---------- vector-drawn symbol legends (no font glyphs) ----------
+// Every non-alphanumeric legend is drawn with canvas paths so it renders
+// identically everywhere and reads like a printed icon.
+function drawSymbol(g, name, cx, cy, s) {
+  g.strokeStyle = g.fillStyle = '#0a0a0a';
+  g.lineWidth = s * 0.15;
+  g.lineCap = g.lineJoin = 'round';
+  const h = s / 2;
+  const arrow = (dx, dy) => {
+    g.beginPath();
+    g.moveTo(cx - dx * h * 0.85, cy - dy * h * 0.85);
+    g.lineTo(cx + dx * h * 0.85, cy + dy * h * 0.85);
+    // arrowhead
+    const px = -dy, py = dx; // perpendicular
+    const hx = cx + dx * h * 0.85, hy = cy + dy * h * 0.85;
+    g.moveTo(hx, hy);
+    g.lineTo(hx - dx * h * 0.5 + px * h * 0.38, hy - dy * h * 0.5 + py * h * 0.38);
+    g.moveTo(hx, hy);
+    g.lineTo(hx - dx * h * 0.5 - px * h * 0.38, hy - dy * h * 0.5 - py * h * 0.38);
+    g.stroke();
+  };
+  const tri = (dir) => { // dir: 1 right, -1 left
+    g.beginPath();
+    g.moveTo(cx + dir * h * 0.7, cy);
+    g.lineTo(cx - dir * h * 0.45, cy - h * 0.62);
+    g.lineTo(cx - dir * h * 0.45, cy + h * 0.62);
+    g.closePath();
+    g.fill();
+  };
+  const bar = (bx, bw) => g.fillRect(cx + bx - bw / 2, cy - h * 0.62, bw, h * 1.24);
+  switch (name) {
+    case 'up': arrow(0, -1); break;
+    case 'down': arrow(0, 1); break;
+    case 'left': arrow(-1, 0); break;
+    case 'right': arrow(1, 0); break;
+    case 'shift': { // block up-arrow
+      g.beginPath();
+      g.moveTo(cx, cy - h);
+      g.lineTo(cx + h * 0.78, cy - h * 0.02);
+      g.lineTo(cx + h * 0.34, cy - h * 0.02);
+      g.lineTo(cx + h * 0.34, cy + h);
+      g.lineTo(cx - h * 0.34, cy + h);
+      g.lineTo(cx - h * 0.34, cy - h * 0.02);
+      g.lineTo(cx - h * 0.78, cy - h * 0.02);
+      g.closePath();
+      g.fill();
+      break;
+    }
+    case 'win': { // 4 sheared panes, like the windows flag
+      const gap = s * 0.09, w = (s - gap) / 2, shear = s * 0.07;
+      for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
+        const x0 = cx - h + c * (w + gap), y0 = cy - h + r * (w + gap);
+        g.beginPath();
+        g.moveTo(x0, y0 + shear);
+        g.lineTo(x0 + w, y0);
+        g.lineTo(x0 + w, y0 + w);
+        g.lineTo(x0, y0 + w + shear);
+        g.closePath();
+        g.fill();
+      }
+      break;
+    }
+    case 'play': tri(1); break;
+    case 'playL': tri(-1); break;
+    case 'prev': bar(-h * 0.62, s * 0.13); tri(-1); break;
+    case 'next': tri(1); bar(h * 0.62, s * 0.13); break;
+    case 'playpause': { // small play triangle left, two pause bars right
+      g.beginPath();
+      g.moveTo(cx - h * 0.75 + h * 0.55, cy);
+      g.lineTo(cx - h * 0.75, cy - h * 0.45);
+      g.lineTo(cx - h * 0.75, cy + h * 0.45);
+      g.closePath();
+      g.fill();
+      bar(h * 0.25, s * 0.11);
+      bar(h * 0.62, s * 0.11);
+      break;
+    }
+    case 'eject': { // up triangle over a bar
+      g.beginPath();
+      g.moveTo(cx, cy - h * 0.85);
+      g.lineTo(cx + h * 0.72, cy + h * 0.12);
+      g.lineTo(cx - h * 0.72, cy + h * 0.12);
+      g.closePath();
+      g.fill();
+      g.fillRect(cx - h * 0.72, cy + h * 0.42, h * 1.44, s * 0.13);
+      break;
+    }
+  }
+}
+const SYMBOLS = {
+  '↑': 'up', '↓': 'down', '←': 'left', '→': 'right',
+  '⇧': 'shift', '⊞': 'win', '▷': 'play', '◁': 'playL',
+  '⏮': 'prev', '⏯': 'playpause', '⏭': 'next', '⏄': 'eject',
+};
+
 // ---------- legend texture (black print on clear cap, like the real caps) ----------
 const legendCache = new Map();
 export function legendTexture(main, sub) {
@@ -62,12 +157,21 @@ export function legendTexture(main, sub) {
     g.fillStyle = '#0a0a0a';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    const long = main.length >= 3;
-    g.font = `800 ${long ? 64 : main.length === 2 ? 88 : 122}px "Segoe UI", system-ui, sans-serif`;
-    g.fillText(main, 128, sub ? 108 : 128);
+    const sym = SYMBOLS[main];
+    if (sym) {
+      drawSymbol(g, sym, 128, sub ? 102 : 128, sub ? 82 : 96);
+    } else {
+      const long = main.length >= 3;
+      g.font = `800 ${long ? 64 : main.length === 2 ? 88 : 122}px "Segoe UI", system-ui, sans-serif`;
+      g.fillText(main, 128, sub ? 108 : 128);
+    }
     if (sub) {
-      g.font = '700 46px "Segoe UI", system-ui, sans-serif';
-      g.fillText(sub, 128, 192);
+      const subSym = SYMBOLS[sub];
+      if (subSym) drawSymbol(g, subSym, 128, 192, 52);
+      else {
+        g.font = '700 46px "Segoe UI", system-ui, sans-serif';
+        g.fillText(sub, 128, 192);
+      }
     }
   }
   const t = new THREE.CanvasTexture(c);
@@ -206,11 +310,13 @@ export function buildKeyboard(layout) {
     caseMesh.castShadow = caseMesh.receiveShadow = true;
     half.add(caseMesh);
 
-    // --- blank cover plate (smoother inset panel, slightly proud) ---
-    const pr = PLATE_RECT_L;
-    const pw = (pr.x1 - pr.x0) * U - 5, pd = (pr.y1 - pr.y0) * U - 5;
-    const plate = new THREE.Mesh(new RoundedBoxGeometry(pw, 1.1, pd, 2, 0.55), plateMat);
-    plate.position.set(mx((pr.x0 + pr.x1) / 2 * U), 0.15, (pr.y0 + pr.y1) / 2 * U);
+    // --- blank cover plate (narrow trapezoid, bottom edge tilts down-inner) ---
+    const plateShape = roundedPoly(PLATE_POLY_L.map(([x, y]) => [mx(x * U), y * U]), 0.06 * U);
+    const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: 1.1, bevelEnabled: false });
+    plateGeo.rotateX(Math.PI / 2); // shape y -> +z, top face at y=0
+    plateGeo.translate(0, 0.35, 0); // slightly proud of the case top
+    const plate = new THREE.Mesh(plateGeo, plateMat);
+    plate.receiveShadow = true;
     half.add(plate);
 
     // --- brass heat-set inserts ---

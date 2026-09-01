@@ -188,6 +188,10 @@ function setLayer(i) {
 }
 document.querySelectorAll('#layers button').forEach((b, i) =>
   b.addEventListener('click', () => setLayer(i)));
+{
+  const l = new URLSearchParams(location.search).get('layer');
+  if (l !== null) setLayer(Math.min(2, Math.max(0, +l || 0)));
+}
 
 document.getElementById('rgb').addEventListener('click', e => {
   rgbMode = (rgbMode + 1) % RGB_MODES.length;

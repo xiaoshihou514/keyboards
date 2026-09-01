@@ -55,36 +55,36 @@ const L2_RIGHT = [
 const EXTRA_L = [
   [['LCLK', ''], ['UG', 'Bri+'], ['', '']],   // x 3.1
   [['RCLK', ''], ['UG', 'Bri-'], ['', '']],   // x 4.1
-  [['↑', ''], ['', ''], ['', '']],            // x 5.1
+  [['Ctrl', ''], ['', ''], ['', '']],            // x 5.1
   [['⊞', ''], ['⊞', ''], ['⊞', '']],          // thumb 1
   [['Spc', ''], ['▷', ''], ['▷', '']],        // thumb 2
 ];
 const EXTRA_R = [
-  [['MO2', ''], ['', ''], ['', '']],
+  [['M2', ''], ['', ''], ['', '']],
   [['⇧', ''], ['', ''], ['', '']],
   [['Del', ''], ['', ''], ['', '']],
-  [['MO1', ''], ['◁', ''], ['◁', '']],
+  [['M1', ''], ['◁', ''], ['◁', '']],
   [['Enter', ''], ['Enter', ''], ['Enter', '']],
 ];
 
-// bottom rows + thumb fan positions (from the top-view photo).
-// Bottom row continues each column's stagger directly below row 3 (normal
-// row spacing — the case is one continuous piece, no gap). Thumbs fan out
-// rotated from the bottom-inner corner.
+// bottom rows + thumb fan positions (measured from the rotated top-view
+// photo, /tmp/ref_normal.jpg). Bottom extras sit directly below X / C / V
+// continuing each column's stagger. Thumbs tuck close under B: the win key
+// protrudes only ~half a key past B's bottom edge, space a full key.
 const EXTRA_POS_L = [
-  { x: 3.5, y: 3.9, rot: 0, code: null },              // below col 3
-  { x: 4.5, y: 4.2, rot: 0, code: null },              // below col 4
-  { x: 5.5, y: 4.3, rot: 0, code: 'ArrowUp' },         // below col 5
-  { x: 6.55, y: 5.15, rot: 22, code: 'MetaLeft' },     // thumb 1
-  { x: 7.3, y: 5.75, rot: 32, code: 'Space' },         // thumb 2
+  { x: 2.5, y: 4.1, rot: 0, code: null },              // LCLK below X
+  { x: 3.5, y: 3.9, rot: 0, code: null },              // RCLK below C
+  { x: 4.5, y: 4.2, rot: 0, code: 'ArrowUp' },         // Ctrl below V
+  { x: 5.55, y: 4.35, rot: 14, code: 'MetaLeft' },     // thumb 1 (⊞)
+  { x: 6.5, y: 4.8, rot: 30, code: 'Space' },          // thumb 2 (Spc)
 ];
 // right half extras = true mirror of the left half about x = 3.0u
 const EXTRA_POS_R = [
-  { x: 0.5, y: 4.3, rot: 0, code: null },              // MO2  (mirror of col5 extra)
-  { x: 1.5, y: 4.2, rot: 0, code: 'ShiftRight' },      // ⇧
-  { x: 2.5, y: 3.9, rot: 0, code: 'Delete' },          // Del
-  { x: -1.3, y: 5.75, rot: -32, code: null },          // MO1 (outer thumb)
-  { x: -0.55, y: 5.15, rot: -22, code: 'Enter' },      // Enter
+  { x: 1.5, y: 4.2, rot: 0, code: null },              // M2  below M
+  { x: 2.5, y: 3.9, rot: 0, code: 'ShiftRight' },      // ⇧   below ,<
+  { x: 3.5, y: 4.1, rot: 0, code: 'Delete' },          // Del below .>
+  { x: -0.5, y: 4.8, rot: -30, code: null },           // M1 (outer thumb)
+  { x: 0.45, y: 4.35, rot: -14, code: 'Enter' },       // Enter
 ];
 
 function grid(stagger, rows) {
@@ -133,30 +133,32 @@ export function buildLayout() {
 }
 
 // Case outline (left half; right half is mirrored via scale.x = -1).
-// Units: u, y down. Traced from the top-view photo: one continuous body —
-// diagonal bottom edge rising toward the outer corner with a big chamfer,
-// and a deeper rectangular thumb bay at the bottom-inner next to the tall
-// blank cover plate.
+// Units: u, y down. Re-traced from the rotated photo: flat top edge with a
+// slim border, narrow inner column for the cover plate (inner edge ~7.2u),
+// and a bottom edge that tilts steadily downward toward the inner corner,
+// wrapping the thumb fan — win key sits nearly flush, space pokes out.
 export const CASE_OUTLINE_L = [
-  [-0.70, -0.55],
-  [-0.32, -1.18],
-  [5.85, -1.18],
-  [6.38, -0.72],
-  [8.42, -0.72],
-  [8.88, -0.28],
-  [8.88, 4.35],
-  [8.42, 4.82],
-  [8.42, 6.05],
-  [7.72, 6.72],
-  [6.10, 6.72],
-  [5.55, 6.18],
-  [5.55, 5.42],
-  [0.30, 4.72],
-  [-0.70, 3.75],
+  [-0.35, -0.35],
+  [7.25, -0.35],
+  [7.25, 4.45],
+  [7.45, 4.95],
+  [7.10, 5.55],
+  [5.70, 5.05],
+  [4.70, 4.90],
+  [2.70, 4.80],
+  [0.40, 4.30],
+  [-0.35, 3.95],
 ];
 
-// blank cover plate region (inner side), slightly smoother inset panel
-export const PLATE_RECT_L = { x0: 6.38, y0: -0.45, x1: 8.6, y1: 4.35 };
+// blank cover plate (inner side): narrow trapezoid whose bottom edge tilts
+// downward toward the inner side, like the real board
+export const PLATE_POLY_L = [
+  [6.05, 0.08],
+  [6.95, 0.08],
+  [6.95, 4.40],
+  [6.05, 3.88],
+];
 
-// brass heat-set insert visible in the photo next to the thumb fan
-export const INSERTS_L = [{ x: 6.02, y: 4.38 }];
+// brass heat-set insert visible in the photo between the Ctrl extra and the
+// win thumb key, just below the plate's lower corner
+export const INSERTS_L = [{ x: 6.20, y: 4.17 }];
