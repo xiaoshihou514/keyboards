@@ -42,7 +42,7 @@ controls.autoRotate = !SHOT;
 controls.autoRotateSpeed = 0.7;
 
 // ---------- lights ----------
-const key = new THREE.DirectionalLight(0xffffff, 2.2);
+const key = new THREE.DirectionalLight(0xffffff, 1.5);
 key.position.set(6, 14, 8);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
@@ -50,7 +50,7 @@ key.shadow.camera.left = key.shadow.camera.bottom = -16;
 key.shadow.camera.right = key.shadow.camera.top = 16;
 key.shadow.bias = -0.0004;
 scene.add(key);
-scene.add(new THREE.HemisphereLight(0x9d8fd0, 0x0a0a12, 0.5));
+scene.add(new THREE.HemisphereLight(0x9d8fd0, 0x0a0a12, 0.28));
 const rim = new THREE.DirectionalLight(0x8855ff, 0.9);
 rim.position.set(-8, 6, -10);
 scene.add(rim);
@@ -102,41 +102,88 @@ for (const kg of keys) if (kg.userData.key.code) byCode.set(kg.userData.key.code
 // ---------- bloom ----------
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.55, 0.7, 0.6);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.45, 0.55, 0.62);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 // ---------- RGB underglow ----------
-const RGB_MODES = ['wave', 'reactive', 'static', 'off'];
+const RGB_MODES = [
+  'global rainbow glow',
+  'vertical rainbow wave',
+  'static green blue',
+  'glowing green blue',
+];
 let rgbMode = 0;
+let underglowEnabled = true;
+let underglowBrightness = 1;
 const tmpColor = new THREE.Color();
+const green = new THREE.Color(0x35e6a5);
+const blue = new THREE.Color(0x3f8dff);
 function ledColor(kg, t) {
   const { wx, wz } = kg.userData;
-  const hue = (t * 0.045 + wx * 0.004 + wz * 0.006) % 1;
-  return tmpColor.setHSL((hue + 1) % 1, 0.85, 0.55);
+  if (rgbMode === 0) {
+    return tmpColor.setHSL((t * 0.055 + 0.62) % 1, 0.88, 0.57);
+  }
+  if (rgbMode === 1) {
+    // vertical bands: hue sweeps across the columns (x), not down the rows
+    const hue = (t * 0.075 + wx * 0.012 + 0.62) % 1;
+    return tmpColor.setHSL((hue + 1) % 1, 0.88, 0.56);
+  }
+  const mix = (Math.sin((wz + wx * 0.35) * 0.045) + 1) / 2;
+  return tmpColor.copy(green).lerp(blue, mix);
+}
+
+function effectIntensity(t) {
+  if (rgbMode === 0) return 0.92 + Math.sin(t * 2.1) * 0.08;
+  if (rgbMode === 3) return 0.35 + (Math.sin(t * 2.6) + 1) * 0.32;
+  return 0.86;
+}
+
+function refreshUnderglowLabel() {
+  const button = document.getElementById('rgb');
+  button.textContent = `RGB: ${RGB_MODES[rgbMode]}`;
+  button.classList.toggle('on', underglowEnabled);
+  button.title = underglowEnabled
+    ? 'Click to change the backlight effect'
+    : 'Backlight is off; click to change the effect';
+}
+
+function cycleUnderglow(direction = 1) {
+  rgbMode = (rgbMode + direction + RGB_MODES.length) % RGB_MODES.length;
+  refreshUnderglowLabel();
+}
+
+function toggleUnderglow() {
+  underglowEnabled = !underglowEnabled;
+  refreshUnderglowLabel();
+}
+
+function adjustUnderglowBrightness(delta) {
+  underglowBrightness = THREE.MathUtils.clamp(underglowBrightness + delta, 0.2, 1.4);
+}
+
+function performKeyAction(kg) {
+  const [main, sub] = kg.userData.key.layers[currentLayer] || ['', ''];
+  const layer = /^TO([0-2])$/i.exec(main.trim());
+  if (layer) {
+    setLayer(Number(layer[1]));
+    return;
+  }
+  if (main === 'UG') {
+    if (sub === 'Tog') toggleUnderglow();
+    else if (sub === 'Next') cycleUnderglow(1);
+    else if (sub === 'Prev') cycleUnderglow(-1);
+    else if (sub === 'Bri+') adjustUnderglowBrightness(0.2);
+    else if (sub === 'Bri-') adjustUnderglowBrightness(-0.2);
+  }
 }
 
 // ---------- key press animation ----------
 const active = new Set();
-function press(kg, strong = 1) {
+function press(kg, strong = 1, executeAction = true) {
   kg.userData.press = 1;
-  kg.userData.flash = strong;
   active.add(kg);
-  ripple(kg);
-}
-function ripple(src) {
-  const { wx, wz } = src.userData;
-  for (const kg of keys) {
-    if (kg === src) continue;
-    const d = Math.hypot(kg.userData.wx - wx, kg.userData.wz - wz);
-    const delay = d * 0.004;
-    const amp = Math.max(0, 1 - d / 90) * 0.7;
-    if (amp <= 0.02) continue;
-    setTimeout(() => {
-      kg.userData.flash = Math.max(kg.userData.flash, amp);
-      active.add(kg);
-    }, delay * 1000);
-  }
+  if (executeAction) performKeyAction(kg);
 }
 
 // auto typing demo
@@ -146,7 +193,7 @@ function autoTypeStep(dt) {
   typeTimer -= dt;
   if (typeTimer <= 0) {
     typeTimer = 0.14 + Math.random() * 0.5;
-    press(keys[(Math.random() * keys.length) | 0], 1);
+    press(keys[(Math.random() * keys.length) | 0], 1, false);
   }
 }
 
@@ -183,19 +230,20 @@ function setLayer(i) {
     m.map = legendTexture(main, sub);
     m.needsUpdate = true;
   }
-  document.querySelectorAll('#layers button').forEach((b, j) =>
-    b.classList.toggle('on', j === i));
 }
-document.querySelectorAll('#layers button').forEach((b, i) =>
-  b.addEventListener('click', () => setLayer(i)));
 {
-  const l = new URLSearchParams(location.search).get('layer');
+  const params = new URLSearchParams(location.search);
+  const l = params.get('layer');
   if (l !== null) setLayer(Math.min(2, Math.max(0, +l || 0)));
+  const r = params.get('rgb');
+  if (r !== null) {
+    rgbMode = Math.min(RGB_MODES.length - 1, Math.max(0, +r || 0));
+    refreshUnderglowLabel();
+  }
 }
 
 document.getElementById('rgb').addEventListener('click', e => {
-  rgbMode = (rgbMode + 1) % RGB_MODES.length;
-  e.target.textContent = `RGB: ${RGB_MODES[rgbMode]}`;
+  cycleUnderglow(1);
 });
 document.getElementById('spin').addEventListener('click', e => {
   controls.autoRotate = !controls.autoRotate;
@@ -207,6 +255,7 @@ document.getElementById('demo').addEventListener('click', e => {
 });
 document.getElementById('spin').classList.toggle('on', controls.autoRotate);
 document.getElementById('demo').classList.toggle('on', autoType);
+refreshUnderglowLabel();
 
 // ---------- loop ----------
 const clock = new THREE.Clock();
@@ -224,21 +273,29 @@ function tick() {
       const s = Math.sin(Math.min(ud.press, 1) * Math.PI);
       ud.cap.position.y = ud.restCapY - s * 1.8;
       ud.legend.position.y = ud.restLegendY - s * 1.8;
+      if (ud.press === 0) active.delete(kg);
     }
-    // flash decay
-    if (ud.flash > 0) {
-      ud.flash = Math.max(0, ud.flash - dt * 2.2);
-      if (ud.flash === 0 && ud.press === 0) active.delete(kg);
-    }
-    // LED
-    const led = ud.led;
-    if (rgbMode === 3) {
+    // per-key RGB: a bright rim escapes the gap under each cap, and light
+    // pools softly on the plate between keys — no whole-cap jelly glow
+    const led = ud.led, spill = ud.spill;
+    if (!underglowEnabled) {
       led.material.opacity = 0;
+      spill.material.opacity = 0;
     } else {
-      const base = rgbMode === 0 ? ledColor(kg, t) : tmpColor.set(0x9933ff);
-      const boost = rgbMode === 1 ? 0.12 : 0.38; // reactive mode glows only on press
-      led.material.color.copy(base).multiplyScalar(boost + ud.flash * 2.2);
-      led.material.opacity = 0.3 + ud.flash * 0.55;
+      const pulse = effectIntensity(t);
+      const base = ledColor(kg, t);
+      led.material.color.copy(base).multiplyScalar(
+        underglowBrightness * (0.85 + pulse * 0.35),
+      );
+      led.material.opacity = THREE.MathUtils.clamp(
+        underglowBrightness * (0.55 + pulse * 0.2), 0, 1,
+      );
+      spill.material.color.copy(base).multiplyScalar(
+        underglowBrightness * (0.5 + pulse * 0.25),
+      );
+      spill.material.opacity = THREE.MathUtils.clamp(
+        underglowBrightness * (0.1 + pulse * 0.1), 0, 0.55,
+      );
     }
     ud.legend.material.opacity = 0.95;
   }

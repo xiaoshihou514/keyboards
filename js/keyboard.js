@@ -80,7 +80,7 @@ function drawSymbol(g, name, cx, cy, s) {
       g.fill();
       break;
     }
-    case 'win': { // 4 sheared panes, like the windows flag
+    case 'win': { // retained for old cached legend names
       const gap = s * 0.09, w = (s - gap) / 2, shear = s * 0.07;
       for (let r = 0; r < 2; r++) for (let c = 0; c < 2; c++) {
         const x0 = cx - h + c * (w + gap), y0 = cy - h + r * (w + gap);
@@ -94,6 +94,39 @@ function drawSymbol(g, name, cx, cy, s) {
       }
       break;
     }
+    case 'bluetooth': drawBluetooth(g, cx, cy, s); break;
+    case 'linux': drawLinux(g, cx, cy, s * 1.14); break;
+    case 'backspace': drawBackspace(g, cx, cy, s); break;
+    case 'home': drawHome(g, cx, cy, s); break;
+    case 'end': drawEnd(g, cx, cy, s); break;
+    case 'copy': drawCopy(g, cx, cy, s); break;
+    case 'paste': drawPaste(g, cx, cy, s); break;
+    case 'control': drawControl(g, cx, cy, s); break;
+    case 'tab': drawTab(g, cx, cy, s); break;
+    case 'return': drawReturn(g, cx, cy, s); break;
+    case 'delete': drawDelete(g, cx, cy, s); break;
+    case 'pageUp': drawPage(g, cx, cy, s, 'up'); break;
+    case 'pageDown': drawPage(g, cx, cy, s, 'down'); break;
+    case 'underglow': drawUnderglow(g, cx, cy, s); break;
+    case 'space': drawSpace(g, cx, cy, s); break;
+    case 'mouseLeft': drawMouse(g, cx, cy, s, 'left'); break;
+    case 'mouseRight': drawMouse(g, cx, cy, s, 'right'); break;
+    case 'ctrlBackspace':
+      drawBackspace(g, cx, cy - h * 0.06, s * 0.84);
+      drawControl(g, cx, cy + h * 0.59, s * 0.3);
+      break;
+    case 'ctrlTab':
+      drawTab(g, cx, cy - h * 0.06, s * 0.84);
+      drawControl(g, cx, cy + h * 0.59, s * 0.3);
+      break;
+    case 'ctrlLeft':
+      drawSymbol(g, 'left', cx, cy - h * 0.06, s * 0.82);
+      drawControl(g, cx, cy + h * 0.59, s * 0.3);
+      break;
+    case 'ctrlRight':
+      drawSymbol(g, 'right', cx, cy - h * 0.06, s * 0.82);
+      drawControl(g, cx, cy + h * 0.59, s * 0.3);
+      break;
     case 'play': tri(1); break;
     case 'playL': tri(-1); break;
     case 'prev': bar(-h * 0.62, s * 0.13); tri(-1); break;
@@ -123,9 +156,376 @@ function drawSymbol(g, name, cx, cy, s) {
 }
 const SYMBOLS = {
   '↑': 'up', '↓': 'down', '←': 'left', '→': 'right',
-  '⇧': 'shift', '⊞': 'win', '▷': 'play', '◁': 'playL',
+  '⇧': 'shift', '⊞': 'linux', '▷': 'play', '◁': 'playL',
   '⏮': 'prev', '⏯': 'playpause', '⏭': 'next', '⏄': 'eject',
+  BT: 'bluetooth', Bksp: 'backspace', Home: 'home', End: 'end',
+  Tab: 'tab', Enter: 'return', Del: 'delete', Spc: 'space',
+  PgUp: 'pageUp', PgDn: 'pageDown', Ctrl: 'control', LC: 'control',
 };
+
+function drawBackspace(g, cx, cy, s) {
+  const w = s * 0.94, h = s * 0.58;
+  const x = cx - w / 2, y = cy - h / 2;
+  g.beginPath();
+  g.moveTo(x + w * 0.23, y);
+  g.lineTo(x + w, y);
+  g.lineTo(x + w, y + h);
+  g.lineTo(x + w * 0.23, y + h);
+  g.lineTo(x, cy);
+  g.closePath();
+  g.stroke();
+  g.beginPath();
+  g.moveTo(x + w * 0.47, y + h * 0.28);
+  g.lineTo(x + w * 0.78, y + h * 0.72);
+  g.moveTo(x + w * 0.78, y + h * 0.28);
+  g.lineTo(x + w * 0.47, y + h * 0.72);
+  g.stroke();
+}
+
+function drawHome(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx - h * 0.78, cy - h * 0.02);
+  g.lineTo(cx, cy - h * 0.72);
+  g.lineTo(cx + h * 0.78, cy - h * 0.02);
+  g.lineTo(cx + h * 0.63, cy - h * 0.02);
+  g.lineTo(cx + h * 0.63, cy + h * 0.72);
+  g.lineTo(cx - h * 0.63, cy + h * 0.72);
+  g.lineTo(cx - h * 0.63, cy - h * 0.02);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx - h * 0.12, cy + h * 0.72);
+  g.lineTo(cx - h * 0.12, cy + h * 0.2);
+  g.lineTo(cx + h * 0.2, cy + h * 0.2);
+  g.lineTo(cx + h * 0.2, cy + h * 0.72);
+  g.stroke();
+}
+
+function drawEnd(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx - h * 0.75, cy);
+  g.lineTo(cx + h * 0.55, cy);
+  g.moveTo(cx + h * 0.2, cy - h * 0.34);
+  g.lineTo(cx + h * 0.55, cy);
+  g.lineTo(cx + h * 0.2, cy + h * 0.34);
+  g.moveTo(cx + h * 0.72, cy - h * 0.65);
+  g.lineTo(cx + h * 0.72, cy + h * 0.65);
+  g.stroke();
+}
+
+function drawCopy(g, cx, cy, s) {
+  const h = s / 2, w = h * 0.9;
+  g.strokeRect(cx - h * 0.62, cy - h * 0.68, w, w * 1.02);
+  g.strokeRect(cx - h * 0.1, cy - h * 0.28, w, w * 1.02);
+}
+
+function drawPaste(g, cx, cy, s) {
+  const h = s / 2, w = h * 0.78;
+  const left = cx - w / 2, right = cx + w / 2;
+  const top = cy - h * 0.52, bottom = cy + h * 0.78;
+  const r = h * 0.12;
+
+  // Minimal clipboard: thick outlined board, solid clip, two text lines.
+  g.strokeStyle = '#0a0a0a';
+  g.lineWidth = s * 0.085;
+  g.beginPath();
+  g.moveTo(left + r, top);
+  g.lineTo(right - r, top);
+  g.quadraticCurveTo(right, top, right, top + r);
+  g.lineTo(right, bottom - r);
+  g.quadraticCurveTo(right, bottom, right - r, bottom);
+  g.lineTo(left + r, bottom);
+  g.quadraticCurveTo(left, bottom, left, bottom - r);
+  g.lineTo(left, top + r);
+  g.quadraticCurveTo(left, top, left + r, top);
+  g.closePath();
+  g.stroke();
+
+  // solid clip straddling the top edge
+  g.fillStyle = '#0a0a0a';
+  const cw = w * 0.46, ch = h * 0.22, cr = ch * 0.45;
+  const cl = cx - cw / 2, ct = top - ch * 0.55;
+  g.beginPath();
+  g.moveTo(cl + cr, ct);
+  g.lineTo(cl + cw - cr, ct);
+  g.quadraticCurveTo(cl + cw, ct, cl + cw, ct + cr);
+  g.lineTo(cl + cw, ct + ch - cr);
+  g.quadraticCurveTo(cl + cw, ct + ch, cl + cw - cr, ct + ch);
+  g.lineTo(cl + cr, ct + ch);
+  g.quadraticCurveTo(cl, ct + ch, cl, ct + ch - cr);
+  g.lineTo(cl, ct + cr);
+  g.quadraticCurveTo(cl, ct, cl + cr, ct);
+  g.closePath();
+  g.fill();
+
+  // pasted content lines
+  g.lineWidth = s * 0.08;
+  g.beginPath();
+  g.moveTo(left + w * 0.2, cy + h * 0.12);
+  g.lineTo(right - w * 0.2, cy + h * 0.12);
+  g.moveTo(left + w * 0.2, cy + h * 0.42);
+  g.lineTo(right - w * 0.38, cy + h * 0.42);
+  g.stroke();
+}
+
+function drawMouse(g, cx, cy, s, button) {
+  const h = s / 2;
+  const w = h * 0.68;
+  const top = cy - h * 0.78, bottom = cy + h * 0.78;
+  const splitY = cy - h * 0.02;
+  const body = () => {
+    g.beginPath();
+    g.moveTo(cx, top);
+    g.bezierCurveTo(cx - w, top, cx - w, cy - h * 0.25, cx - w, cy + h * 0.05);
+    g.bezierCurveTo(cx - w, bottom, cx + w, bottom, cx + w, cy + h * 0.05);
+    g.bezierCurveTo(cx + w, cy - h * 0.25, cx + w, top, cx, top);
+    g.closePath();
+  };
+
+  // Outlined body with the clicked button filled solid: the filled quadrant
+  // is the whole message, so it must be a single bold shape.
+  g.save();
+  body();
+  g.clip();
+  g.fillStyle = '#0a0a0a';
+  const bx = button === 'left' ? cx - w : cx;
+  g.fillRect(bx, top - 1, w, splitY - top + 1);
+  g.restore();
+
+  g.strokeStyle = '#0a0a0a';
+  g.lineWidth = s * 0.085;
+  body();
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx, top);
+  g.lineTo(cx, splitY);
+  g.moveTo(cx - w, splitY);
+  g.lineTo(cx + w, splitY);
+  g.stroke();
+
+  // wheel: short thick dash between the buttons (manual capsule, no roundRect)
+  g.lineWidth = s * 0.09;
+  g.beginPath();
+  g.moveTo(cx, cy - h * 0.5);
+  g.lineTo(cx, cy - h * 0.22);
+  g.stroke();
+}
+
+function drawBluetooth(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx, cy - h * 0.9);
+  g.lineTo(cx, cy + h * 0.9);
+  g.moveTo(cx, cy - h * 0.9);
+  g.lineTo(cx + h * 0.62, cy - h * 0.38);
+  g.lineTo(cx - h * 0.52, cy + h * 0.42);
+  g.moveTo(cx, cy + h * 0.9);
+  g.lineTo(cx + h * 0.62, cy + h * 0.38);
+  g.lineTo(cx - h * 0.52, cy - h * 0.42);
+  g.stroke();
+}
+
+function drawLinux(g, cx, cy, s) {
+  const h = s / 2;
+  g.save();
+
+  // Tux reduced to three bold masses so it survives keycap scale:
+  // black body, big white belly/face, orange beak and feet.
+  g.fillStyle = '#0a0a0a';
+  g.beginPath();
+  g.ellipse(cx, cy, h * 0.6, h * 0.84, 0, 0, Math.PI * 2);
+  g.fill();
+
+  g.fillStyle = '#f4f0f8';
+  g.beginPath();
+  g.ellipse(cx, cy + h * 0.06, h * 0.36, h * 0.6, 0, 0, Math.PI * 2);
+  g.fill();
+
+  // eyes
+  g.fillStyle = '#0a0a0a';
+  g.beginPath();
+  g.arc(cx - h * 0.16, cy - h * 0.3, h * 0.1, 0, Math.PI * 2);
+  g.arc(cx + h * 0.16, cy - h * 0.3, h * 0.1, 0, Math.PI * 2);
+  g.fill();
+
+  // beak
+  g.fillStyle = '#e8930c';
+  g.beginPath();
+  g.moveTo(cx - h * 0.23, cy - h * 0.08);
+  g.lineTo(cx + h * 0.23, cy - h * 0.08);
+  g.lineTo(cx, cy + h * 0.14);
+  g.closePath();
+  g.fill();
+
+  // feet
+  g.beginPath();
+  g.ellipse(cx - h * 0.32, cy + h * 0.78, h * 0.27, h * 0.13, -0.25, 0, Math.PI * 2);
+  g.ellipse(cx + h * 0.32, cy + h * 0.78, h * 0.27, h * 0.13, 0.25, 0, Math.PI * 2);
+  g.fill();
+  g.restore();
+}
+
+function drawControl(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx - h * 0.62, cy + h * 0.25);
+  g.lineTo(cx, cy - h * 0.48);
+  g.lineTo(cx + h * 0.62, cy + h * 0.25);
+  g.stroke();
+}
+
+function drawTab(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx - h * 0.7, cy);
+  g.lineTo(cx + h * 0.38, cy);
+  g.moveTo(cx + h * 0.05, cy - h * 0.34);
+  g.lineTo(cx + h * 0.38, cy);
+  g.lineTo(cx + h * 0.05, cy + h * 0.34);
+  g.moveTo(cx + h * 0.7, cy - h * 0.62);
+  g.lineTo(cx + h * 0.7, cy + h * 0.62);
+  g.stroke();
+}
+
+function drawReturn(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx + h * 0.7, cy - h * 0.3);
+  g.lineTo(cx + h * 0.7, cy + h * 0.35);
+  g.lineTo(cx - h * 0.35, cy + h * 0.35);
+  g.moveTo(cx - h * 0.65, cy + h * 0.35);
+  g.lineTo(cx - h * 0.35, cy + h * 0.05);
+  g.moveTo(cx - h * 0.65, cy + h * 0.35);
+  g.lineTo(cx - h * 0.35, cy + h * 0.65);
+  g.stroke();
+}
+
+function drawDelete(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx - h * 0.68, cy);
+  g.lineTo(cx - h * 0.35, cy - h * 0.38);
+  g.lineTo(cx + h * 0.68, cy - h * 0.38);
+  g.lineTo(cx + h * 0.68, cy + h * 0.38);
+  g.lineTo(cx - h * 0.35, cy + h * 0.38);
+  g.closePath();
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx - h * 0.57, cy - h * 0.15);
+  g.lineTo(cx - h * 0.26, cy + h * 0.15);
+  g.moveTo(cx - h * 0.26, cy - h * 0.15);
+  g.lineTo(cx - h * 0.57, cy + h * 0.15);
+  g.stroke();
+}
+
+function drawPage(g, cx, cy, s, direction) {
+  const h = s / 2;
+  const up = direction === 'up';
+  const tipY = cy + (up ? -h * 0.45 : h * 0.45);
+  const tailY = cy + (up ? h * 0.35 : -h * 0.35);
+  g.beginPath();
+  g.moveTo(cx, tailY);
+  g.lineTo(cx, tipY);
+  g.moveTo(cx, tipY);
+  g.lineTo(cx - h * 0.25, tipY + (up ? h * 0.22 : -h * 0.22));
+  g.moveTo(cx, tipY);
+  g.lineTo(cx + h * 0.25, tipY + (up ? h * 0.22 : -h * 0.22));
+  g.moveTo(cx - h * 0.58, cy + h * 0.62);
+  g.lineTo(cx + h * 0.58, cy + h * 0.62);
+  g.stroke();
+}
+
+function drawUnderglow(g, cx, cy, s) {
+  const h = s / 2;
+  // A bulb reads faster than the old abstract LED dot on a low-resolution cap.
+  g.beginPath();
+  g.moveTo(cx, cy - h * 0.7);
+  g.bezierCurveTo(cx - h * 0.62, cy - h * 0.7, cx - h * 0.68, cy + h * 0.08, cx - h * 0.26, cy + h * 0.4);
+  g.lineTo(cx - h * 0.26, cy + h * 0.58);
+  g.lineTo(cx + h * 0.26, cy + h * 0.58);
+  g.lineTo(cx + h * 0.26, cy + h * 0.4);
+  g.bezierCurveTo(cx + h * 0.68, cy + h * 0.08, cx + h * 0.62, cy - h * 0.7, cx, cy - h * 0.7);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(cx - h * 0.3, cy + h * 0.72);
+  g.lineTo(cx + h * 0.3, cy + h * 0.72);
+  g.moveTo(cx - h * 0.22, cy + h * 0.86);
+  g.lineTo(cx + h * 0.22, cy + h * 0.86);
+  g.stroke();
+  for (const [dx, dy] of [[0, -1], [1, 0], [0, 1], [-1, 0]]) {
+    g.beginPath();
+    g.moveTo(cx + dx * h * 0.78, cy + dy * h * 0.02);
+    g.lineTo(cx + dx * h, cy + dy * h * 0.02);
+    g.stroke();
+  }
+}
+
+function drawSpace(g, cx, cy, s) {
+  const h = s / 2;
+  g.beginPath();
+  g.moveTo(cx - h * 0.75, cy + h * 0.18);
+  g.lineTo(cx + h * 0.75, cy + h * 0.18);
+  g.stroke();
+}
+
+const SHIFTED_LEGENDS = new Set([
+  '`~', '1!', '2@', '3#', '4$', '5%', '6^', '7&', '8*', '9(', '0)',
+  '-_', '=+', '[{', ']}', '\\|', ';:', "'\"", ',<', '.>', '/?',
+]);
+
+function drawShiftedLegend(g, value) {
+  const base = value[0], shifted = value.slice(1);
+  g.fillStyle = '#0a0a0a';
+  g.strokeStyle = '#0a0a0a';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+
+  // A small, heavy shifted symbol above the larger base character mirrors
+  // the convention used on full-size keyboard keycaps.
+  g.font = '900 58px "Segoe UI", Arial, sans-serif';
+  g.lineWidth = 2.4;
+  g.strokeText(shifted, 128, 72);
+  g.fillText(shifted, 128, 72);
+
+  g.font = '900 98px "Segoe UI", Arial, sans-serif';
+  g.lineWidth = 3.2;
+  g.strokeText(base, 128, 170);
+  g.fillText(base, 128, 170);
+}
+
+function legendPresentation(main, sub) {
+  const a = String(main || '').trim();
+  const b = String(sub || '').trim();
+  const combo = `${a} ${b}`
+    .toLowerCase()
+    .replace(/[()]/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\s+/g, '-');
+
+  // Shortcut chords get a single visual mark instead of a tiny unreadable
+  // string on the cap. Keep the aliases here so VIA labels can evolve
+  // without changing the renderer.
+  if (['c-s-c', 'lc-ls-c'].includes(combo)) return { symbol: 'copy', sub: '' };
+  if (['c-s-v', 'lc-ls-v'].includes(combo)) return { symbol: 'paste', sub: '' };
+  if (combo === 'lc-bksp') return { symbol: 'ctrlBackspace', sub: '' };
+  if (combo === 'lc-tab') return { symbol: 'ctrlTab', sub: '' };
+  if (combo === 'lc-←' || combo === 'lc-left') return { symbol: 'ctrlLeft', sub: '' };
+  if (combo === 'lc-→' || combo === 'lc-right') return { symbol: 'ctrlRight', sub: '' };
+
+  const direct = {
+    bt: 'bluetooth', bksp: 'backspace', backspace: 'backspace',
+    home: 'home', end: 'end', tab: 'tab', enter: 'return',
+    del: 'delete', delete: 'delete', spc: 'space',
+    pgup: 'pageUp', pgdn: 'pageDown', ctrl: 'control', lc: 'control',
+    lclk: 'mouseLeft', rclk: 'mouseRight',
+    '⊞': 'linux', ug: 'underglow',
+  };
+  const symbol = direct[a.toLowerCase()] || SYMBOLS[a];
+  if (symbol === 'bluetooth' || symbol === 'underglow') return { symbol, sub: b };
+  if (symbol) return { symbol, sub: b };
+  return { main: a, sub: b };
+}
 
 // ---------- legend texture (black print on clear cap, like the real caps) ----------
 const legendCache = new Map();
@@ -153,24 +553,29 @@ export function legendTexture(main, sub) {
   g.lineTo(x0, y0 + rr); g.arcTo(x0, y0, x0 + rr, y0, rr);
   g.closePath();
   g.fill();
-  if (main) {
+  const presentation = legendPresentation(main, sub);
+  const displayMain = presentation.main ?? main;
+  const displaySub = presentation.sub ?? sub;
+  if (displayMain || presentation.symbol) {
     g.fillStyle = '#0a0a0a';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    const sym = SYMBOLS[main];
+    const sym = presentation.symbol;
     if (sym) {
-      drawSymbol(g, sym, 128, sub ? 102 : 128, sub ? 82 : 96);
+      drawSymbol(g, sym, 128, displaySub ? 102 : 128, displaySub ? 82 : 96);
+    } else if (!displaySub && SHIFTED_LEGENDS.has(displayMain)) {
+      drawShiftedLegend(g, displayMain);
     } else {
-      const long = main.length >= 3;
-      g.font = `800 ${long ? 64 : main.length === 2 ? 88 : 122}px "Segoe UI", system-ui, sans-serif`;
-      g.fillText(main, 128, sub ? 108 : 128);
+      const long = displayMain.length >= 3;
+      g.font = `800 ${long ? 64 : displayMain.length === 2 ? 88 : 122}px "Segoe UI", system-ui, sans-serif`;
+      g.fillText(displayMain, 128, displaySub ? 108 : 128);
     }
-    if (sub) {
-      const subSym = SYMBOLS[sub];
+    if (displaySub) {
+      const subSym = SYMBOLS[displaySub];
       if (subSym) drawSymbol(g, subSym, 128, 192, 52);
       else {
         g.font = '700 46px "Segoe UI", system-ui, sans-serif';
-        g.fillText(sub, 128, 192);
+        g.fillText(displaySub, 128, 192);
       }
     }
   }
@@ -283,7 +688,10 @@ export function buildKeyboard(layout) {
   gg.fillStyle = grad;
   gg.fillRect(0, 0, 128, 128);
   const glowTex = new THREE.CanvasTexture(glowC);
-  const ledGeo = new THREE.PlaneGeometry(15.5, 15.5);
+  // spill pool bleeds across the plate between caps; rim sliver is just wider
+  // than the 16.2mm cap base so only a thin bright edge escapes the gap
+  const ledGeo = new THREE.PlaneGeometry(21, 21);
+  const ledCoreGeo = new THREE.PlaneGeometry(17.8, 17.8);
   const legendGeo = new THREE.PlaneGeometry(12.6, 12.6);
   const insertGeo = new THREE.CylinderGeometry(2.1, 2.1, 1.2, 24);
 
@@ -298,25 +706,26 @@ export function buildKeyboard(layout) {
     // (grid keys already live in final local coords; only case parts mirror)
     const mx = v => (mirror ? 6 * U - v : v);
 
-    // --- case ---
+    // --- case: thin bottom slab ---
     const outline = CASE_OUTLINE_L.map(([x, y]) => [mx(x * U), y * U]);
     const caseGeo = new THREE.ExtrudeGeometry(roundedPoly(outline, 0.16 * U), {
-      depth: 9.5, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.6, bevelSegments: 2,
+      depth: 5.5, bevelEnabled: true, bevelThickness: 1.6, bevelSize: 1.6, bevelSegments: 2,
     });
     // rotateX(+PI/2): layout +y -> +z (toward viewer), extrusion -> downward
     caseGeo.rotateX(Math.PI / 2);
-    caseGeo.translate(0, -1.6, 0); // top face at y=0, body below
+    caseGeo.translate(0, -1.6, 0); // top face (deck) at y=0, body below
     const caseMesh = new THREE.Mesh(caseGeo, caseMat);
     caseMesh.castShadow = caseMesh.receiveShadow = true;
     half.add(caseMesh);
 
-    // --- blank cover plate (narrow trapezoid, bottom edge tilts down-inner) ---
+    // --- raised plateau: cover plate + inner rim strip, up to cap base ---
+    const RIM_TOP = 4.4; // ~keycap bottom height
     const plateShape = roundedPoly(PLATE_POLY_L.map(([x, y]) => [mx(x * U), y * U]), 0.06 * U);
-    const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: 1.1, bevelEnabled: false });
-    plateGeo.rotateX(Math.PI / 2); // shape y -> +z, top face at y=0
-    plateGeo.translate(0, 0.35, 0); // slightly proud of the case top
-    const plate = new THREE.Mesh(plateGeo, plateMat);
-    plate.receiveShadow = true;
+    const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: RIM_TOP, bevelEnabled: false });
+    plateGeo.rotateX(Math.PI / 2); // shape y -> +z
+    plateGeo.translate(0, RIM_TOP, 0); // spans deck .. RIM_TOP
+    const plate = new THREE.Mesh(plateGeo, caseMat);
+    plate.castShadow = plate.receiveShadow = true;
     half.add(plate);
 
     // --- brass heat-set inserts ---
@@ -326,17 +735,6 @@ export function buildKeyboard(layout) {
       half.add(m);
     }
 
-    // --- underglow skirt (emissive outline slightly wider than case) ---
-    const skirtGeo = new THREE.ExtrudeGeometry(roundedPoly(outline, 0.16 * U), {
-      depth: 2.2, bevelEnabled: false,
-    });
-    skirtGeo.rotateX(Math.PI / 2);
-    const skirtMat = new THREE.MeshBasicMaterial({ color: 0x8822ff, side: THREE.DoubleSide });
-    const skirt = new THREE.Mesh(skirtGeo, skirtMat);
-    skirt.scale.set(1.012, 1, 1.012);
-    skirt.position.y = -10.6;
-    half.add(skirt);
-
     // --- keys ---
     for (const k of layout[side]) {
       const kg = new THREE.Group();
@@ -344,14 +742,25 @@ export function buildKeyboard(layout) {
       kg.position.set(x, 0.4, z);
       kg.rotation.y = THREE.MathUtils.degToRad(-k.rot);
 
-      const ledMat = new THREE.MeshBasicMaterial({
+      // per-key RGB: light escapes the gap under the cap as a bright rim
+      // sliver around the cap base, plus a soft spill pooling on the plate
+      const ledCoreMat = new THREE.MeshBasicMaterial({
         color: 0x9933ff, transparent: true, opacity: 0.9, map: glowTex,
         blending: THREE.AdditiveBlending, depthWrite: false,
       });
-      const led = new THREE.Mesh(ledGeo, ledMat);
+      const led = new THREE.Mesh(ledCoreGeo, ledCoreMat);
       led.rotation.x = -Math.PI / 2;
-      led.position.y = 0.12;
+      led.position.y = 4.24; // just under the cap base -> only the rim shows
       kg.add(led);
+
+      const ledSpillMat = new THREE.MeshBasicMaterial({
+        color: 0x9933ff, transparent: true, opacity: 0.3, map: glowTex,
+        blending: THREE.AdditiveBlending, depthWrite: false,
+      });
+      const spill = new THREE.Mesh(ledGeo, ledSpillMat);
+      spill.rotation.x = -Math.PI / 2;
+      spill.position.y = 0.12;
+      kg.add(spill);
 
       const housing = new THREE.Mesh(housingGeo, housingMat);
       housing.position.y = 1.9;
@@ -375,10 +784,10 @@ export function buildKeyboard(layout) {
       kg.add(legend);
 
       kg.userData = {
-        key: k, cap, led, legend,
+        key: k, cap, led, spill, legend,
         restCapY: cap.position.y,
         restLegendY: legend.position.y,
-        press: 0, flash: 0,
+        press: 0,
         wx: x, wz: z,
       };
       keys.push(kg);

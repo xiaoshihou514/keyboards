@@ -18,8 +18,8 @@ python3 -m http.server 8123
 - **拖动** 旋转视角，**滚轮** 缩放
 - **点击 3D 键帽** 触发按压动画 + RGB 涟漪
 - **直接敲你的真键盘** —— 按 `event.code` 映射，对应键会下沉并发光
-- **LAYER 0/1/2** —— 切换键帽图例（数据来自 VIA 截图逐层转录）
-- **RGB** —— wave / reactive / static / off 四种灯效
+- **TO0/TO1/TO2** —— 点击 3D 键帽可在图层之间切换，并切换键帽图例（数据来自 VIA 截图逐层转录）
+- **UNDERGLOW** —— global rainbow glow / vertical rainbow wave / static green blue / glowing green blue 四种灯效；`UG Tog/Next/Prev/Bri+/Bri-` 也可直接操作
 - **ROTATE** —— 自动旋转展示
 - **DEMO TYPE** —— 自动打字演示
 
