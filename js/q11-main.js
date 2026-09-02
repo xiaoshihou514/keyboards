@@ -11,7 +11,7 @@ const params = new URLSearchParams(location.search);
 const EMBED = params.has('embed');
 const SHOT = params.has('shot');
 const FLAT = params.has('flat');
-const RGB_ENABLED = params.get('rgb') === '1';
+let rgbEnabled = !FLAT && params.get('rgb') !== '0';
 const keymapResponse = await fetch('./real/keymap.vil');
 if (!keymapResponse.ok) throw new Error(`Unable to load real/keymap.vil (${keymapResponse.status})`);
 const vialKeymap = await keymapResponse.json();
@@ -53,7 +53,7 @@ controls.minDistance = 8;
 controls.maxDistance = 36;
 controls.maxPolarAngle = Math.PI * 0.49;
 
-const keyLight = new THREE.DirectionalLight(0xfff8ee, 3.25);
+const keyLight = new THREE.DirectionalLight(0xfff8ee, 2.7);
 keyLight.position.set(-7, 15, 10);
 keyLight.castShadow = true;
 keyLight.shadow.mapSize.set(EMBED ? 1024 : 2048, EMBED ? 1024 : 2048);
@@ -62,7 +62,7 @@ keyLight.shadow.camera.right = keyLight.shadow.camera.top = 18;
 keyLight.shadow.bias = -0.00045;
 scene.add(keyLight);
 scene.add(new THREE.HemisphereLight(0xb7c5ff, 0x111017, 0.5));
-const rimLight = new THREE.DirectionalLight(0x7395ff, 1.35);
+const rimLight = new THREE.DirectionalLight(0x7395ff, 1.05);
 rimLight.position.set(10, 6, -11);
 scene.add(rimLight);
 
@@ -102,6 +102,26 @@ function microTexture(base, fleck, line) {
   texture.anisotropy = renderer.capabilities.getMaxAnisotropy();
   return texture;
 }
+
+function radialGlowTexture() {
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = 128;
+  const g = canvas.getContext('2d');
+  const glow = g.createRadialGradient(64, 64, 5, 64, 64, 62);
+  glow.addColorStop(0, 'rgba(255,255,255,0.95)');
+  glow.addColorStop(0.3, 'rgba(255,255,255,0.62)');
+  glow.addColorStop(0.72, 'rgba(255,255,255,0.26)');
+  glow.addColorStop(1, 'rgba(255,255,255,0)');
+  g.fillStyle = glow;
+  g.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.minFilter = THREE.LinearFilter;
+  texture.magFilter = THREE.LinearFilter;
+  return texture;
+}
+
+const switchGlowTexture = radialGlowTexture();
 
 const caseMaterial = new THREE.MeshPhysicalMaterial({
   color: 0x1a1e22,
@@ -669,11 +689,11 @@ function makeKey(parent, x, z, baseCode, layerCodes, primary, secondary = '', wi
   parent.add(group);
 
   const ledMaterial = new THREE.MeshBasicMaterial({
-    color: RGB_ENABLED ? 0xffffff : 0x101217,
+    color: rgbEnabled ? 0xffffff : 0x101217,
     toneMapped: false,
   });
   const led = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.34, 0.08, 18), ledMaterial);
-  led.position.y = 0.6;
+  led.position.y = 0.49;
   group.add(led);
 
   // Keep the deck pad shallow, then carry the switch on a narrower stem. The
@@ -681,6 +701,25 @@ function makeKey(parent, x, z, baseCode, layerCodes, primary, secondary = '', wi
   const socket = roundedMesh(width * 0.66, 0.08, 0.49, 0.025, switchSocketMaterial, `${group.name}-socket`);
   socket.position.y = 0.42;
   group.add(socket);
+
+  const diffuserMaterial = new THREE.MeshBasicMaterial({
+    color: rgbEnabled ? 0xffffff : 0x101217,
+    map: switchGlowTexture,
+    transparent: true,
+    opacity: rgbEnabled ? 0.28 : 0,
+    depthWrite: false,
+    toneMapped: false,
+    blending: THREE.AdditiveBlending,
+    side: THREE.DoubleSide,
+  });
+  const diffuser = new THREE.Mesh(new THREE.CircleGeometry(0.62, 32), diffuserMaterial);
+  diffuser.name = `${group.name}-diffuser`;
+  diffuser.position.y = 0.478;
+  diffuser.rotation.x = -Math.PI / 2;
+  diffuser.scale.x = Math.min(1.45, (width + 0.12) / 0.9);
+  diffuser.castShadow = false;
+  diffuser.receiveShadow = false;
+  group.add(diffuser);
 
   const stem = roundedMesh(Math.min(width * 0.34, 0.3), 0.08, 0.27, 0.025, switchMaterial.clone(), `${group.name}-stem`);
   stem.position.y = 0.5;
@@ -719,6 +758,7 @@ function makeKey(parent, x, z, baseCode, layerCodes, primary, secondary = '', wi
     led,
     legend,
     socket,
+    diffuser,
     stem,
     baseCode,
     layerCodes,
@@ -727,7 +767,7 @@ function makeKey(parent, x, z, baseCode, layerCodes, primary, secondary = '', wi
     press: 0,
   };
   keyGroups.push(group);
-  glowSources.push({ led, housing, cap, worldXHint: parent.position.x + x });
+  glowSources.push({ led, diffuser, housing, stem, cap, worldXHint: parent.position.x + x, worldZHint: parent.position.z + z });
   return group;
 }
 
@@ -987,6 +1027,8 @@ function performKeyAction(group) {
   const activeCode = group.userData.layerCodes[currentLayer] ?? 'KC_NO';
   const defaultLayer = /^DF\((\d+)\)$/.exec(activeCode);
   if (defaultLayer) setLayer(Number(defaultLayer[1]));
+  if (activeCode === 'RM_ON') setRgbEnabled(true);
+  if (activeCode === 'RM_OFF') setRgbEnabled(false);
 }
 
 const requestedLayer = Number.parseInt(params.get('layer') || '0', 10);
@@ -1001,22 +1043,45 @@ if (FLAT) {
 
 for (let i = 0; i < 8; i++) {
   const x = -8.4 + i * 2.4;
+  const z = 0.2 + (i % 2) * 1.8;
   const light = new THREE.PointLight(0xffffff, 0, 3.2, 1.7);
-  light.position.set(x, 0.44, 0.2 + (i % 2) * 1.8);
+  light.position.set(x, 0.44, z);
   board.add(light);
-  glowSources.push({ point: light, worldXHint: x });
+  glowSources.push({ point: light, worldXHint: x, worldZHint: z });
 }
 
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
 const bloom = new UnrealBloomPass(
   new THREE.Vector2(innerWidth, innerHeight),
-  FLAT || !RGB_ENABLED ? 0 : (EMBED ? 0.62 : 0.76),
-  0.62,
-  0.52,
+  rgbEnabled ? (EMBED ? 0.32 : 0.4) : 0,
+  0.48,
+  0.68,
 );
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
+
+function setRgbEnabled(enabled) {
+  rgbEnabled = !FLAT && Boolean(enabled);
+  bloom.strength = rgbEnabled ? (EMBED ? 0.32 : 0.4) : 0;
+  if (rgbEnabled) return;
+  for (const source of glowSources) {
+    if (source.led) {
+      source.led.material.color.setHex(0x101217);
+      source.diffuser.material.color.setHex(0x101217);
+      source.diffuser.material.opacity = 0;
+      source.housing.material.color.copy(switchMaterial.color);
+      source.stem.material.color.copy(switchMaterial.color);
+      source.housing.material.emissive.setHex(0x000000);
+      source.housing.material.emissiveIntensity = 0;
+      source.stem.material.emissive.setHex(0x000000);
+      source.stem.material.emissiveIntensity = 0;
+      source.cap.material.emissive.setHex(0x000000);
+      source.cap.material.emissiveIntensity = 0;
+    }
+    if (source.point) source.point.intensity = 0;
+  }
+}
 
 const raycaster = new THREE.Raycaster();
 const pointer = new THREE.Vector2();
@@ -1043,21 +1108,27 @@ function animate() {
   const breathe = 0.58 + (Math.sin(elapsed * 1.35) + 1) * 0.31;
 
   for (const source of glowSources) {
-    if (FLAT || !RGB_ENABLED) continue;
-    const hue = THREE.MathUtils.euclideanModulo(source.worldXHint * 0.038 + 0.63, 1);
-    color.setHSL(hue, 0.98, 0.58);
+    if (!rgbEnabled) continue;
+    const hue = THREE.MathUtils.euclideanModulo(source.worldXHint * 0.042 + source.worldZHint * 0.018 + 0.63, 1);
+    color.setHSL(hue, 0.99, 0.52);
     if (source.led) {
       source.led.material.color.copy(color);
+      source.diffuser.material.color.copy(color);
+      source.diffuser.material.opacity = breathe * 0.32;
+      source.housing.material.color.copy(color).lerp(switchMaterial.color, 0.72);
+      source.stem.material.color.copy(color).lerp(switchMaterial.color, 0.78);
       source.housing.material.emissive.copy(color);
-      source.housing.material.emissiveIntensity = breathe * 0.72;
-      // The LED is below the cap: it illuminates the pale switch housing and
-      // the gaps around the skirt, while the PBT cap itself stays non-emissive.
+      source.housing.material.emissiveIntensity = breathe * 0.025;
+      source.stem.material.emissive.copy(color);
+      source.stem.material.emissiveIntensity = breathe * 0.015;
+      // Keep the keycap's authored material neutral. RGB is emitted only by
+      // the switch-base components beneath it.
       source.cap.material.emissive.setHex(0x000000);
       source.cap.material.emissiveIntensity = 0;
     }
     if (source.point) {
       source.point.color.copy(color);
-      source.point.intensity = breathe * (EMBED ? 0.2 : 0.3);
+      source.point.intensity = breathe * (EMBED ? 0.08 : 0.12);
     }
   }
 
@@ -1098,6 +1169,8 @@ board.userData.sculptRuntime = {
   },
   setLayer,
   get currentLayer() { return currentLayer; },
+  setRgbEnabled,
+  get rgbEnabled() { return rgbEnabled; },
   setExploded,
 };
 window.__Q11_RUNTIME__ = board.userData.sculptRuntime;
