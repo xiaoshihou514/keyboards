@@ -101,6 +101,7 @@ function drawSymbol(g, name, cx, cy, s) {
     case 'end': drawEnd(g, cx, cy, s); break;
     case 'copy': drawCopy(g, cx, cy, s); break;
     case 'paste': drawPaste(g, cx, cy, s); break;
+    case 'pastePlain': drawPastePlain(g, cx, cy, s); break;
     case 'control': drawControl(g, cx, cy, s); break;
     case 'tab': drawTab(g, cx, cy, s); break;
     case 'return': drawReturn(g, cx, cy, s); break;
@@ -108,6 +109,11 @@ function drawSymbol(g, name, cx, cy, s) {
     case 'pageUp': drawPage(g, cx, cy, s, 'up'); break;
     case 'pageDown': drawPage(g, cx, cy, s, 'down'); break;
     case 'underglow': drawUnderglow(g, cx, cy, s); break;
+    case 'plus': drawPlusMinus(g, cx, cy, s, 1); break;
+    case 'minus': drawPlusMinus(g, cx, cy, s, -1); break;
+    case 'power': drawPower(g, cx, cy, s); break;
+    case 'volumeDown': drawVolume(g, cx, cy, s, -1); break;
+    case 'volumeUp': drawVolume(g, cx, cy, s, 1); break;
     case 'space': drawSpace(g, cx, cy, s); break;
     case 'mouseLeft': drawMouse(g, cx, cy, s, 'left'); break;
     case 'mouseRight': drawMouse(g, cx, cy, s, 'right'); break;
@@ -161,6 +167,9 @@ const SYMBOLS = {
   BT: 'bluetooth', Bksp: 'backspace', Home: 'home', End: 'end',
   Tab: 'tab', Enter: 'return', Del: 'delete', Spc: 'space',
   PgUp: 'pageUp', PgDn: 'pageDown', Ctrl: 'control', LC: 'control',
+  Tog: 'power', Next: 'next', Prev: 'prev',
+  'Bri+': 'plus', 'Bri-': 'minus',
+  'Vol-': 'volumeDown', 'Vol+': 'volumeUp',
 };
 
 function drawBackspace(g, cx, cy, s) {
@@ -269,6 +278,41 @@ function drawPaste(g, cx, cy, s) {
   g.stroke();
 }
 
+function drawPastePlain(g, cx, cy, s) {
+  const h = s / 2;
+  const left = cx - h * 0.58, top = cy - h * 0.58;
+  const width = h * 1.16, height = h * 1.38;
+  const radius = h * 0.12;
+
+  // Clipboard outline and solid clip.
+  g.lineWidth = s * 0.085;
+  g.beginPath();
+  g.moveTo(left + radius, top);
+  g.lineTo(left + width - radius, top);
+  g.quadraticCurveTo(left + width, top, left + width, top + radius);
+  g.lineTo(left + width, top + height - radius);
+  g.quadraticCurveTo(left + width, top + height, left + width - radius, top + height);
+  g.lineTo(left + radius, top + height);
+  g.quadraticCurveTo(left, top + height, left, top + height - radius);
+  g.lineTo(left, top + radius);
+  g.quadraticCurveTo(left, top, left + radius, top);
+  g.stroke();
+  g.fillRect(cx - h * 0.25, top - h * 0.12, h * 0.5, h * 0.24);
+
+  // A bold T and two clean text lines communicate “paste as plain text”.
+  g.lineWidth = s * 0.1;
+  g.beginPath();
+  g.moveTo(cx - h * 0.33, cy - h * 0.2);
+  g.lineTo(cx + h * 0.33, cy - h * 0.2);
+  g.moveTo(cx, cy - h * 0.2);
+  g.lineTo(cx, cy + h * 0.18);
+  g.moveTo(cx - h * 0.34, cy + h * 0.42);
+  g.lineTo(cx + h * 0.34, cy + h * 0.42);
+  g.moveTo(cx - h * 0.34, cy + h * 0.65);
+  g.lineTo(cx + h * 0.14, cy + h * 0.65);
+  g.stroke();
+}
+
 function drawMouse(g, cx, cy, s, button) {
   const h = s / 2;
   const w = h * 0.68;
@@ -330,38 +374,46 @@ function drawLinux(g, cx, cy, s) {
   const h = s / 2;
   g.save();
 
-  // Tux reduced to three bold masses so it survives keycap scale:
-  // black body, big white belly/face, orange beak and feet.
+  // Flippers sit behind the body and give Tux his unmistakable silhouette.
   g.fillStyle = '#0a0a0a';
   g.beginPath();
-  g.ellipse(cx, cy, h * 0.6, h * 0.84, 0, 0, Math.PI * 2);
+  g.ellipse(cx - h * 0.52, cy + h * 0.2, h * 0.2, h * 0.48, -0.42, 0, Math.PI * 2);
+  g.ellipse(cx + h * 0.52, cy + h * 0.2, h * 0.2, h * 0.48, 0.42, 0, Math.PI * 2);
   g.fill();
 
+  // Separate head and body read much more clearly than one generic oval.
+  g.beginPath();
+  g.ellipse(cx, cy + h * 0.18, h * 0.52, h * 0.66, 0, 0, Math.PI * 2);
+  g.ellipse(cx, cy - h * 0.38, h * 0.44, h * 0.43, 0, 0, Math.PI * 2);
+  g.fill();
+
+  // White belly and paired face patches.
   g.fillStyle = '#f4f0f8';
   g.beginPath();
-  g.ellipse(cx, cy + h * 0.06, h * 0.36, h * 0.6, 0, 0, Math.PI * 2);
+  g.ellipse(cx, cy + h * 0.28, h * 0.33, h * 0.46, 0, 0, Math.PI * 2);
+  g.ellipse(cx - h * 0.16, cy - h * 0.42, h * 0.17, h * 0.21, -0.08, 0, Math.PI * 2);
+  g.ellipse(cx + h * 0.16, cy - h * 0.42, h * 0.17, h * 0.21, 0.08, 0, Math.PI * 2);
   g.fill();
 
-  // eyes
+  // Pupils lean inward, preserving the friendly Tux expression at small size.
   g.fillStyle = '#0a0a0a';
   g.beginPath();
-  g.arc(cx - h * 0.16, cy - h * 0.3, h * 0.1, 0, Math.PI * 2);
-  g.arc(cx + h * 0.16, cy - h * 0.3, h * 0.1, 0, Math.PI * 2);
+  g.arc(cx - h * 0.11, cy - h * 0.39, h * 0.065, 0, Math.PI * 2);
+  g.arc(cx + h * 0.11, cy - h * 0.39, h * 0.065, 0, Math.PI * 2);
   g.fill();
 
-  // beak
+  // Beak and feet are the only color accent in the printed icon.
   g.fillStyle = '#e8930c';
   g.beginPath();
-  g.moveTo(cx - h * 0.23, cy - h * 0.08);
-  g.lineTo(cx + h * 0.23, cy - h * 0.08);
-  g.lineTo(cx, cy + h * 0.14);
+  g.moveTo(cx - h * 0.24, cy - h * 0.24);
+  g.lineTo(cx + h * 0.24, cy - h * 0.24);
+  g.lineTo(cx, cy + h * 0.01);
   g.closePath();
   g.fill();
 
-  // feet
   g.beginPath();
-  g.ellipse(cx - h * 0.32, cy + h * 0.78, h * 0.27, h * 0.13, -0.25, 0, Math.PI * 2);
-  g.ellipse(cx + h * 0.32, cy + h * 0.78, h * 0.27, h * 0.13, 0.25, 0, Math.PI * 2);
+  g.ellipse(cx - h * 0.3, cy + h * 0.74, h * 0.27, h * 0.13, -0.2, 0, Math.PI * 2);
+  g.ellipse(cx + h * 0.3, cy + h * 0.74, h * 0.27, h * 0.13, 0.2, 0, Math.PI * 2);
   g.fill();
   g.restore();
 }
@@ -461,6 +513,57 @@ function drawUnderglow(g, cx, cy, s) {
   }
 }
 
+function drawPlusMinus(g, cx, cy, s, sign) {
+  const h = s / 2;
+  g.lineWidth = s * 0.16;
+  g.beginPath();
+  g.moveTo(cx - h * 0.68, cy);
+  g.lineTo(cx + h * 0.68, cy);
+  if (sign > 0) {
+    g.moveTo(cx, cy - h * 0.68);
+    g.lineTo(cx, cy + h * 0.68);
+  }
+  g.stroke();
+}
+
+function drawPower(g, cx, cy, s) {
+  const h = s / 2;
+  g.lineWidth = s * 0.14;
+  g.beginPath();
+  g.moveTo(cx, cy - h * 0.9);
+  g.lineTo(cx, cy - h * 0.14);
+  g.stroke();
+  g.beginPath();
+  g.arc(cx, cy + h * 0.08, h * 0.68, -Math.PI * 0.25, Math.PI * 1.25);
+  g.stroke();
+}
+
+function drawVolume(g, cx, cy, s, sign) {
+  const h = s / 2;
+
+  // Solid speaker mass on the left, plus/minus control on the right.
+  g.beginPath();
+  g.moveTo(cx - h * 0.86, cy - h * 0.28);
+  g.lineTo(cx - h * 0.51, cy - h * 0.28);
+  g.lineTo(cx - h * 0.12, cy - h * 0.66);
+  g.lineTo(cx - h * 0.12, cy + h * 0.66);
+  g.lineTo(cx - h * 0.51, cy + h * 0.28);
+  g.lineTo(cx - h * 0.86, cy + h * 0.28);
+  g.closePath();
+  g.fill();
+
+  g.lineWidth = s * 0.13;
+  const actionX = cx + h * 0.5;
+  g.beginPath();
+  g.moveTo(actionX - h * 0.3, cy);
+  g.lineTo(actionX + h * 0.3, cy);
+  if (sign > 0) {
+    g.moveTo(actionX, cy - h * 0.3);
+    g.lineTo(actionX, cy + h * 0.3);
+  }
+  g.stroke();
+}
+
 function drawSpace(g, cx, cy, s) {
   const h = s / 2;
   g.beginPath();
@@ -507,7 +610,7 @@ function legendPresentation(main, sub) {
   // string on the cap. Keep the aliases here so VIA labels can evolve
   // without changing the renderer.
   if (['c-s-c', 'lc-ls-c'].includes(combo)) return { symbol: 'copy', sub: '' };
-  if (['c-s-v', 'lc-ls-v'].includes(combo)) return { symbol: 'paste', sub: '' };
+  if (['c-s-v', 'lc-ls-v'].includes(combo)) return { symbol: 'pastePlain', sub: '' };
   if (combo === 'lc-bksp') return { symbol: 'ctrlBackspace', sub: '' };
   if (combo === 'lc-tab') return { symbol: 'ctrlTab', sub: '' };
   if (combo === 'lc-←' || combo === 'lc-left') return { symbol: 'ctrlLeft', sub: '' };
@@ -520,6 +623,7 @@ function legendPresentation(main, sub) {
     pgup: 'pageUp', pgdn: 'pageDown', ctrl: 'control', lc: 'control',
     lclk: 'mouseLeft', rclk: 'mouseRight',
     '⊞': 'linux', ug: 'underglow',
+    'vol-': 'volumeDown', 'vol+': 'volumeUp',
   };
   const symbol = direct[a.toLowerCase()] || SYMBOLS[a];
   if (symbol === 'bluetooth' || symbol === 'underglow') return { symbol, sub: b };
@@ -535,24 +639,9 @@ export function legendTexture(main, sub) {
   const c = document.createElement('canvas');
   c.width = c.height = 256;
   const g = c.getContext('2d');
+  // Keep the legend decal genuinely transparent: the switch stem and RGB
+  // source must remain visible through the cap around the printed symbol.
   g.clearRect(0, 0, 256, 256);
-  // frosted top sheet: a soft light rounded rect under the print,
-  // like the diffused top surface of the real clear caps
-  const sheet = g.createRadialGradient(128, 128, 20, 128, 128, 118);
-  sheet.addColorStop(0, 'rgba(240,240,245,0.34)');
-  sheet.addColorStop(0.8, 'rgba(240,240,245,0.22)');
-  sheet.addColorStop(1, 'rgba(240,240,245,0)');
-  g.fillStyle = sheet;
-  g.beginPath();
-  // manual rounded-rect path (arcTo is universally supported)
-  const x0 = 8, y0 = 8, w = 240, rr = 42;
-  g.moveTo(x0 + rr, y0);
-  g.lineTo(x0 + w - rr, y0); g.arcTo(x0 + w, y0, x0 + w, y0 + rr, rr);
-  g.lineTo(x0 + w, y0 + w - rr); g.arcTo(x0 + w, y0 + w, x0 + w - rr, y0 + w, rr);
-  g.lineTo(x0 + rr, y0 + w); g.arcTo(x0, y0 + w, x0, y0 + w - rr, rr);
-  g.lineTo(x0, y0 + rr); g.arcTo(x0, y0, x0 + rr, y0, rr);
-  g.closePath();
-  g.fill();
   const presentation = legendPresentation(main, sub);
   const displayMain = presentation.main ?? main;
   const displaySub = presentation.sub ?? sub;
@@ -632,19 +721,34 @@ function capGeometry() {
   return geo;
 }
 
-// Kailh Choc "pig-nose" stem: two round barrels flanking a center web,
-// reads as two circles from the top through the clear cap.
-function chocStem(material) {
+// Choc-style low-profile stem from the supplied switch reference: a wide,
+// boxy slider with twin top wells, a raised center bridge, and a genuinely
+// open front socket. It is assembled from cheap beveled boxes because this
+// detail repeats 58 times and spends most of its life under a translucent cap.
+function chocStem(material, cavityMaterial) {
   const g = new THREE.Group();
-  const barrelGeo = new THREE.CylinderGeometry(1.6, 1.6, 2.6, 16);
-  const webGeo = new THREE.BoxGeometry(6.2, 2.6, 1.7);
-  for (const dx of [-2.35, 2.35]) {
-    const b = new THREE.Mesh(barrelGeo, material);
-    b.position.x = dx;
-    g.add(b);
-  }
-  const web = new THREE.Mesh(webGeo, material);
-  g.add(web);
+  const addBox = (w, h, d, x, y, z, mat = material, radius = 0.24) => {
+    const part = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 1, radius), mat);
+    part.position.set(x, y, z);
+    g.add(part);
+  };
+
+  // Outer rails + center bridge form the two rectangular top recesses.
+  addBox(1.45, 2.2, 5.2, -3.675, 0, 0);
+  addBox(1.45, 2.2, 5.2, 3.675, 0, 0);
+  addBox(1.9, 2.45, 4.45, 0, 0.12, -0.08, material, 0.28);
+  addBox(8.8, 2.05, 0.95, 0, -0.06, -2.2);
+  addBox(8.8, 1.15, 0.8, 0, -0.5, 2.2);
+
+  // Lowered floors make both wells read as real cavities instead of decals.
+  addBox(1.78, 0.32, 3.15, -1.91, -0.91, 0, cavityMaterial, 0.12);
+  addBox(1.78, 0.32, 3.15, 1.91, -0.91, 0, cavityMaterial, 0.12);
+
+  // Four pieces form the reference's hollow, front-facing rectangular tab.
+  addBox(2.4, 0.52, 1.16, 0, 0.85, 2.8, material, 0.18);
+  addBox(2.4, 0.34, 1.16, 0, -0.82, 2.8, material, 0.14);
+  addBox(0.44, 1.55, 1.16, -0.98, 0, 2.8, material, 0.16);
+  addBox(0.44, 1.55, 1.16, 0.98, 0, 2.8, material, 0.16);
   return g;
 }
 
@@ -656,20 +760,23 @@ export function buildKeyboard(layout) {
     bumpMap: bump, bumpScale: 0.5, envMapIntensity: 0.4,
   });
   const plateMat = new THREE.MeshStandardMaterial({
-    color: 0x1d1e21, roughness: 0.55, metalness: 0.1,
+    color: 0x35383f, roughness: 0.66, metalness: 0.07,
   });
   const capMat = new THREE.MeshPhysicalMaterial({
-    color: 0xffffff, roughness: 0.3, metalness: 0,
-    transmission: 0.9, thickness: 2.0, ior: 1.49,
-    clearcoat: 0.5, clearcoatRoughness: 0.4,
-    attenuationColor: new THREE.Color(0xdcd2e8), attenuationDistance: 14,
+    color: 0xffffff, roughness: 0.2, metalness: 0,
+    transmission: 0.9, thickness: 1.4, ior: 1.46,
+    transparent: true, opacity: 0.78, depthWrite: false,
+    clearcoat: 0.75, clearcoatRoughness: 0.18,
+    attenuationColor: new THREE.Color(0xffffff), attenuationDistance: 30,
   });
   const housingMat = new THREE.MeshPhysicalMaterial({
     color: 0x3a3340, roughness: 0.35, transmission: 0.55, thickness: 2,
   });
   const stemMat = new THREE.MeshStandardMaterial({
-    color: 0xb45ae0, roughness: 0.4,
-    emissive: 0x7e22ce, emissiveIntensity: 0.28,
+    color: 0x6e35ad, roughness: 0.32, metalness: 0,
+  });
+  const stemCavityMat = new THREE.MeshStandardMaterial({
+    color: 0x24102f, roughness: 0.5, metalness: 0,
   });
   const brassMat = new THREE.MeshStandardMaterial({
     color: 0xc9a04e, roughness: 0.35, metalness: 0.95,
@@ -688,10 +795,10 @@ export function buildKeyboard(layout) {
   gg.fillStyle = grad;
   gg.fillRect(0, 0, 128, 128);
   const glowTex = new THREE.CanvasTexture(glowC);
-  // spill pool bleeds across the plate between caps; rim sliver is just wider
-  // than the 16.2mm cap base so only a thin bright edge escapes the gap
-  const ledGeo = new THREE.PlaneGeometry(21, 21);
-  const ledCoreGeo = new THREE.PlaneGeometry(17.8, 17.8);
+  // spill pool bleeds softly across the plate between caps
+  const ledGeo = new THREE.PlaneGeometry(17.8, 17.8);
+  const ledCoreGeo = new THREE.PlaneGeometry(5.8, 5.8);
+  const capGlowGeo = new THREE.PlaneGeometry(11.8, 11.8);
   const legendGeo = new THREE.PlaneGeometry(12.6, 12.6);
   const insertGeo = new THREE.CylinderGeometry(2.1, 2.1, 1.2, 24);
 
@@ -718,13 +825,30 @@ export function buildKeyboard(layout) {
     caseMesh.castShadow = caseMesh.receiveShadow = true;
     half.add(caseMesh);
 
-    // --- raised plateau: cover plate + inner rim strip, up to cap base ---
+    // --- raised center: the case rises around an inset cover plate ---
     const RIM_TOP = 4.4; // ~keycap bottom height
-    const plateShape = roundedPoly(PLATE_POLY_L.map(([x, y]) => [mx(x * U), y * U]), 0.06 * U);
-    const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: RIM_TOP, bevelEnabled: false });
-    plateGeo.rotateX(Math.PI / 2); // shape y -> +z
-    plateGeo.translate(0, RIM_TOP, 0); // spans deck .. RIM_TOP
-    const plate = new THREE.Mesh(plateGeo, caseMat);
+    const raisedShape = roundedPoly(PLATE_POLY_L.map(([x, y]) => [mx(x * U), y * U]), 0.06 * U);
+    const raisedGeo = new THREE.ExtrudeGeometry(raisedShape, { depth: RIM_TOP, bevelEnabled: false });
+    raisedGeo.rotateX(Math.PI / 2); // shape y -> +z
+    raisedGeo.translate(0, RIM_TOP, 0); // spans deck .. RIM_TOP
+    const raisedCase = new THREE.Mesh(raisedGeo, caseMat);
+    raisedCase.castShadow = raisedCase.receiveShadow = true;
+    half.add(raisedCase);
+
+    // Inset only the top and middle-facing sides. The exposed portion of the
+    // raised case becomes a continuous L-shaped surround at plate height.
+    const coverPoly = [
+      [6.05, -0.05],
+      [7.02, -0.05],
+      [7.02, 4.28],
+      [7.10, 4.38],
+      [6.05, 3.88],
+    ];
+    const coverShape = roundedPoly(coverPoly.map(([x, y]) => [mx(x * U), y * U]), 0.045 * U);
+    const coverGeo = new THREE.ExtrudeGeometry(coverShape, { depth: 0.24, bevelEnabled: false });
+    coverGeo.rotateX(Math.PI / 2);
+    coverGeo.translate(0, RIM_TOP + 0.035, 0); // nearly flush with the raised case
+    const plate = new THREE.Mesh(coverGeo, plateMat);
     plate.castShadow = plate.receiveShadow = true;
     half.add(plate);
 
@@ -742,20 +866,20 @@ export function buildKeyboard(layout) {
       kg.position.set(x, 0.4, z);
       kg.rotation.y = THREE.MathUtils.degToRad(-k.rot);
 
-      // per-key RGB: light escapes the gap under the cap as a bright rim
-      // sliver around the cap base, plus a soft spill pooling on the plate
+      // The LED is layered inside the switch: a tight hotspot and a very
+      // restrained plate spill. The stem itself supplies the visible shape.
       const ledCoreMat = new THREE.MeshBasicMaterial({
         color: 0x9933ff, transparent: true, opacity: 0.9, map: glowTex,
-        blending: THREE.AdditiveBlending, depthWrite: false,
+        blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
       });
       const led = new THREE.Mesh(ledCoreGeo, ledCoreMat);
       led.rotation.x = -Math.PI / 2;
-      led.position.y = 4.24; // just under the cap base -> only the rim shows
+      led.position.y = 3.58;
       kg.add(led);
 
       const ledSpillMat = new THREE.MeshBasicMaterial({
         color: 0x9933ff, transparent: true, opacity: 0.3, map: glowTex,
-        blending: THREE.AdditiveBlending, depthWrite: false,
+        blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false,
       });
       const spill = new THREE.Mesh(ledGeo, ledSpillMat);
       spill.rotation.x = -Math.PI / 2;
@@ -766,14 +890,39 @@ export function buildKeyboard(layout) {
       housing.position.y = 1.9;
       kg.add(housing);
 
-      const stem = chocStem(stemMat);
+      // A second soft pool sits at the switch opening, beneath the opaque
+      // stem. Depth testing makes the housing and cap transmit the light
+      // naturally instead of painting an impossible glow onto the stem.
+      const innerGlow = new THREE.Sprite(new THREE.SpriteMaterial({
+        color: 0xffffff, transparent: true, opacity: 0,
+        map: glowTex, blending: THREE.AdditiveBlending,
+        depthWrite: false, depthTest: true, toneMapped: false,
+      }));
+      innerGlow.scale.set(7.2, 7.2, 1);
+      innerGlow.position.y = 3.48;
+      kg.add(innerGlow);
+
+      const stem = chocStem(stemMat, stemCavityMat);
       stem.position.y = 4.1;
       kg.add(stem);
 
       const cap = new THREE.Mesh(capGeo, capMat);
       cap.position.y = 4.3;
-      cap.castShadow = true;
+      cap.castShadow = false;
       kg.add(cap);
+
+      // MeshPhysical transmission does not scatter a tiny LED through the
+      // whole keycap. This soft layer represents that transmitted light just
+      // beneath the cap surface; it is separate from the opaque stem.
+      const capGlow = new THREE.Mesh(capGlowGeo, new THREE.MeshBasicMaterial({
+        color: 0xffffff, transparent: true, opacity: 0,
+        map: glowTex, blending: THREE.NormalBlending,
+        depthWrite: false, depthTest: false, toneMapped: false,
+      }));
+      capGlow.rotation.x = -Math.PI / 2;
+      capGlow.position.y = 4.3 + CAP_H - 0.2;
+      capGlow.renderOrder = 3;
+      kg.add(capGlow);
 
       const legend = new THREE.Mesh(legendGeo, new THREE.MeshBasicMaterial({
         map: legendTexture(k.layers[0][0], k.layers[0][1]),
@@ -781,14 +930,19 @@ export function buildKeyboard(layout) {
       }));
       legend.rotation.x = -Math.PI / 2;
       legend.position.y = 4.3 + CAP_H + 0.18;
+      legend.renderOrder = 4;
       kg.add(legend);
 
       kg.userData = {
-        key: k, cap, led, spill, legend,
+        key: k, half: side, cap, stem, led, spill, innerGlow, capGlow, legend,
         restCapY: cap.position.y,
+        restStemY: stem.position.y,
         restLegendY: legend.position.y,
         press: 0,
         wx: x, wz: z,
+        // Continuous phase coordinate: negative on the left half and positive
+        // on the right, so a wave can travel across the whole split board.
+        waveX: mirror ? x : x - 7 * U,
       };
       keys.push(kg);
       half.add(kg);

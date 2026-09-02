@@ -26,7 +26,9 @@ scene.fog = new THREE.Fog(0x07070b, 30, 90);
 
 const pmrem = new THREE.PMREMGenerator(renderer);
 scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-scene.environmentIntensity = 0.55;
+// Keep the neutral fill below the RGB emitters so the light reads as coming
+// from the switches instead of being flattened by the room reflection.
+scene.environmentIntensity = 0.36;
 
 const camera = new THREE.PerspectiveCamera(42, innerWidth / innerHeight, 0.1, 200);
 camera.position.set(0, 16.5, 15.5);
@@ -38,11 +40,9 @@ controls.dampingFactor = 0.06;
 controls.maxPolarAngle = Math.PI * 0.49;
 controls.minDistance = 6;
 controls.maxDistance = 50;
-controls.autoRotate = !SHOT;
-controls.autoRotateSpeed = 0.7;
 
 // ---------- lights ----------
-const key = new THREE.DirectionalLight(0xffffff, 1.5);
+const key = new THREE.DirectionalLight(0xffffff, 1.25);
 key.position.set(6, 14, 8);
 key.castShadow = true;
 key.shadow.mapSize.set(2048, 2048);
@@ -50,8 +50,8 @@ key.shadow.camera.left = key.shadow.camera.bottom = -16;
 key.shadow.camera.right = key.shadow.camera.top = 16;
 key.shadow.bias = -0.0004;
 scene.add(key);
-scene.add(new THREE.HemisphereLight(0x9d8fd0, 0x0a0a12, 0.28));
-const rim = new THREE.DirectionalLight(0x8855ff, 0.9);
+scene.add(new THREE.HemisphereLight(0x9d8fd0, 0x0a0a12, 0.18));
+const rim = new THREE.DirectionalLight(0x8855ff, 0.55);
 rim.position.set(-8, 6, -10);
 scene.add(rim);
 
@@ -102,39 +102,42 @@ for (const kg of keys) if (kg.userData.key.code) byCode.set(kg.userData.key.code
 // ---------- bloom ----------
 const composer = new EffectComposer(renderer);
 composer.addPass(new RenderPass(scene, camera));
-const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.45, 0.55, 0.62);
+const bloom = new UnrealBloomPass(new THREE.Vector2(innerWidth, innerHeight), 0.74, 0.58, 0.5);
 composer.addPass(bloom);
 composer.addPass(new OutputPass());
 
 // ---------- RGB underglow ----------
 const RGB_MODES = [
-  'global rainbow glow',
-  'vertical rainbow wave',
+  'static rainbow glow · wide',
+  'rainbow wave · vivid',
   'static green blue',
   'glowing green blue',
 ];
 let rgbMode = 0;
 let underglowEnabled = true;
-let underglowBrightness = 1;
+let underglowBrightness = 1.3;
 const tmpColor = new THREE.Color();
-const green = new THREE.Color(0x35e6a5);
-const blue = new THREE.Color(0x3f8dff);
+const greenBlue = new THREE.Color(0x00e5d0);
 function ledColor(kg, t) {
-  const { wx, wz } = kg.userData;
+  const { waveX } = kg.userData;
   if (rgbMode === 0) {
-    return tmpColor.setHSL((t * 0.055 + 0.62) % 1, 0.88, 0.57);
+    // A fixed, full-spectrum gradient spanning both halves of the board.
+    // The hue positions stay still; effectIntensity supplies the breathing
+    // glow without turning the gradient back into a traveling wave.
+    const hue = waveX * 0.0048 + 0.62;
+    return tmpColor.setHSL((hue % 1 + 1) % 1, 0.92, 0.58);
   }
   if (rgbMode === 1) {
-    // vertical bands: hue sweeps across the columns (x), not down the rows
-    const hue = (t * 0.075 + wx * 0.012 + 0.62) % 1;
-    return tmpColor.setHSL((hue + 1) % 1, 0.88, 0.56);
+    const hue = waveX * 0.008 - t * 0.18 + 0.62;
+    return tmpColor.setHSL((hue % 1 + 1) % 1, 0.94, 0.58);
   }
-  const mix = (Math.sin((wz + wx * 0.35) * 0.045) + 1) / 2;
-  return tmpColor.copy(green).lerp(blue, mix);
+  // One cyan-teal hue halfway between green and blue. The glowing variant
+  // changes only brightness; it never splits the board into two colors.
+  return tmpColor.copy(greenBlue);
 }
 
 function effectIntensity(t) {
-  if (rgbMode === 0) return 0.92 + Math.sin(t * 2.1) * 0.08;
+  if (rgbMode === 0) return 0.18 + (Math.sin(t * 1.45) + 1) * 0.41;
   if (rgbMode === 3) return 0.35 + (Math.sin(t * 2.6) + 1) * 0.32;
   return 0.86;
 }
@@ -159,7 +162,7 @@ function toggleUnderglow() {
 }
 
 function adjustUnderglowBrightness(delta) {
-  underglowBrightness = THREE.MathUtils.clamp(underglowBrightness + delta, 0.2, 1.4);
+  underglowBrightness = THREE.MathUtils.clamp(underglowBrightness + delta, 0.2, 2.0);
 }
 
 function performKeyAction(kg) {
@@ -184,17 +187,6 @@ function press(kg, strong = 1, executeAction = true) {
   kg.userData.press = 1;
   active.add(kg);
   if (executeAction) performKeyAction(kg);
-}
-
-// auto typing demo
-let autoType = !SHOT;
-let typeTimer = 0;
-function autoTypeStep(dt) {
-  typeTimer -= dt;
-  if (typeTimer <= 0) {
-    typeTimer = 0.14 + Math.random() * 0.5;
-    press(keys[(Math.random() * keys.length) | 0], 1, false);
-  }
 }
 
 // physical keyboard -> 3D
@@ -245,16 +237,6 @@ function setLayer(i) {
 document.getElementById('rgb').addEventListener('click', e => {
   cycleUnderglow(1);
 });
-document.getElementById('spin').addEventListener('click', e => {
-  controls.autoRotate = !controls.autoRotate;
-  e.target.classList.toggle('on', controls.autoRotate);
-});
-document.getElementById('demo').addEventListener('click', e => {
-  autoType = !autoType;
-  e.target.classList.toggle('on', autoType);
-});
-document.getElementById('spin').classList.toggle('on', controls.autoRotate);
-document.getElementById('demo').classList.toggle('on', autoType);
 refreshUnderglowLabel();
 
 // ---------- loop ----------
@@ -263,8 +245,6 @@ function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
   const t = SHOT ? 3.7 : clock.elapsedTime;
 
-  if (autoType) autoTypeStep(dt);
-
   for (const kg of keys) {
     const ud = kg.userData;
     // press spring — choc travel ~3mm, animate a clearly visible 1.8mm dip
@@ -272,29 +252,45 @@ function tick() {
       ud.press = Math.max(0, ud.press - dt * 7);
       const s = Math.sin(Math.min(ud.press, 1) * Math.PI);
       ud.cap.position.y = ud.restCapY - s * 1.8;
+      ud.stem.position.y = ud.restStemY - s * 1.8;
       ud.legend.position.y = ud.restLegendY - s * 1.8;
       if (ud.press === 0) active.delete(kg);
     }
-    // per-key RGB: a bright rim escapes the gap under each cap, and light
-    // pools softly on the plate between keys — no whole-cap jelly glow
+    // per-key RGB: the source is concentrated inside each switch, with only
+    // a restrained hotspot and nearby pool escaping onto the plate.
     const led = ud.led, spill = ud.spill;
+    const innerGlow = ud.innerGlow, capGlow = ud.capGlow;
     if (!underglowEnabled) {
       led.material.opacity = 0;
       spill.material.opacity = 0;
+      innerGlow.material.opacity = 0;
+      capGlow.material.opacity = 0;
     } else {
       const pulse = effectIntensity(t);
       const base = ledColor(kg, t);
       led.material.color.copy(base).multiplyScalar(
-        underglowBrightness * (0.85 + pulse * 0.35),
+        underglowBrightness * (1.45 + pulse * 0.65),
       );
       led.material.opacity = THREE.MathUtils.clamp(
-        underglowBrightness * (0.55 + pulse * 0.2), 0, 1,
+        underglowBrightness * (0.34 + pulse * 0.22), 0, 0.7,
       );
       spill.material.color.copy(base).multiplyScalar(
-        underglowBrightness * (0.5 + pulse * 0.25),
+        underglowBrightness * (0.55 + pulse * 0.3),
       );
       spill.material.opacity = THREE.MathUtils.clamp(
-        underglowBrightness * (0.1 + pulse * 0.1), 0, 0.55,
+        underglowBrightness * (0.075 + pulse * 0.085), 0, 0.4,
+      );
+      innerGlow.material.color.copy(base).multiplyScalar(
+        underglowBrightness * (1.2 + pulse * 0.55),
+      );
+      innerGlow.material.opacity = THREE.MathUtils.clamp(
+        underglowBrightness * (0.11 + pulse * 0.1), 0, 0.3,
+      );
+      capGlow.material.color.copy(base).multiplyScalar(
+        underglowBrightness * (1.0 + pulse * 0.25),
+      );
+      capGlow.material.opacity = THREE.MathUtils.clamp(
+        underglowBrightness * (0.36 + pulse * 0.2), 0, 0.82,
       );
     }
     ud.legend.material.opacity = 0.95;
