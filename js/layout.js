@@ -151,14 +151,13 @@ export const CASE_OUTLINE_L = [
 ];
 
 // raised plateau (left half): the cover-plate trapezoid plus the case rim
-// strip beside it along the inner (middle-facing) edge. Its bottom edge is
-// the plate's tilted edge extended out to the case outline. Everything else
-// on the deck stays flat. Raised to ~keycap-bottom height.
+// strip beside it along the inner (middle-facing) edge. The inner outline
+// follows the lower case perimeter exactly, so both border levels align.
+// Everything else on the deck stays flat. Raised to ~keycap-bottom height.
 export const PLATE_POLY_L = [
   [6.05, -0.35],
   [7.25, -0.35],
   [7.25, 4.45],
-  [7.35, 4.63],
   [6.05, 3.88],
 ];
 

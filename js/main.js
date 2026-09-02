@@ -144,6 +144,7 @@ function effectIntensity(t) {
 
 function refreshUnderglowLabel() {
   const button = document.getElementById('rgb');
+  if (!button) return;
   button.textContent = `RGB: ${RGB_MODES[rgbMode]}`;
   button.classList.toggle('on', underglowEnabled);
   button.title = underglowEnabled
@@ -234,7 +235,7 @@ function setLayer(i) {
   }
 }
 
-document.getElementById('rgb').addEventListener('click', e => {
+document.getElementById('rgb')?.addEventListener('click', e => {
   cycleUnderglow(1);
 });
 refreshUnderglowLabel();

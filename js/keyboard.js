@@ -840,11 +840,10 @@ export function buildKeyboard(layout) {
     const coverPoly = [
       [6.05, -0.05],
       [7.02, -0.05],
-      [7.02, 4.28],
-      [7.10, 4.38],
+      [7.02, 4.341],
       [6.05, 3.88],
     ];
-    const coverShape = roundedPoly(coverPoly.map(([x, y]) => [mx(x * U), y * U]), 0.045 * U);
+    const coverShape = roundedPoly(coverPoly.map(([x, y]) => [mx(x * U), y * U]), 0.02 * U);
     const coverGeo = new THREE.ExtrudeGeometry(coverShape, { depth: 0.24, bevelEnabled: false });
     coverGeo.rotateX(Math.PI / 2);
     coverGeo.translate(0, RIM_TOP + 0.035, 0); // nearly flush with the raised case
