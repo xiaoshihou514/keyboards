@@ -1,27 +1,116 @@
 <!doctype html>
-<html lang="zh">
+<html lang="zh-CN">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Split Keyboard · three.js</title>
-  <style>
-    html, body { margin: 0; height: 100%; overflow: hidden; background: #07070b; }
-    canvas { display: block; }
-  </style>
+  <meta name="description" content="四把个人机械键盘的三维档案，可直接旋转观察并进入全屏。" />
+  <title>键盘档案 · 四把个人键盘</title>
+  <link rel="stylesheet" href="./styles/landing.css" />
 </head>
 <body>
-  <div id="hud">
-    <div class="row">
-    </div>
-  </div>
-  <script type="importmap">
-    {
-      "imports": {
-        "three": "./node_modules/three/build/three.module.js",
-        "three/addons/": "./node_modules/three/examples/jsm/"
-      }
-    }
-  </script>
-  <script type="module" src="./js/main.js"></script>
+  <div class="ambient" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a class="wordmark" href="#top" aria-label="返回页面顶部">键盘 / 档案</a>
+    <p>个人键盘档案 <span>·</span> 共 04 把</p>
+  </header>
+
+  <main id="top">
+    <section class="masthead" aria-labelledby="page-title">
+      <div class="masthead-copy">
+        <p class="eyebrow">手感、结构与光的个人实验</p>
+        <h1 id="page-title">四把键盘，<br />四种手感。</h1>
+      </div>
+      <div class="intro">
+        <p>从分体布局到低矮轴体，每一把都保留自己的结构与使用痕迹。直接拖动模型观察细节，或进入全屏沉浸查看。</p>
+        <p class="interaction-note"><span aria-hidden="true">↔</span> 拖动旋转 · 滚轮缩放 · 点击按键</p>
+      </div>
+    </section>
+
+    <section class="collection" aria-label="键盘收藏">
+      <article class="keyboard-card" aria-labelledby="keyboard-01-title">
+        <div class="card-index" aria-hidden="true">01</div>
+        <div class="preview-shell">
+          <iframe class="preview-frame" src="./demo.html?embed=1&amp;layer=0&amp;rgb=0" title="一号键盘三维预览" loading="eager" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+        <div class="card-details">
+          <div>
+            <p class="card-kicker">透明低轴 · 主键层</p>
+            <h2 id="keyboard-01-title">Sofle矮轴58% / 一号</h2>
+          </div>
+          <a class="fullscreen-link" href="./demo.html?layer=0&amp;rgb=0" data-fullscreen aria-label="全屏查看一号键盘">全屏查看 <span aria-hidden="true">↗</span></a>
+        </div>
+        <dl class="specs">
+          <div><dt>布局</dt><dd>分体 · 58 键</dd></div>
+          <div><dt>轴体</dt><dd>低矮轴体</dd></div>
+          <div><dt>灯效</dt><dd>静态彩虹呼吸</dd></div>
+        </dl>
+      </article>
+
+      <article class="keyboard-card" aria-labelledby="keyboard-02-title">
+        <div class="card-index" aria-hidden="true">02</div>
+        <div class="preview-shell">
+          <iframe class="preview-frame" src="./q11.html?embed=1" title="二号 Q11 分体键盘三维预览" loading="eager" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+        <div class="card-details">
+          <div>
+            <p class="card-kicker">铝坨坨 · 双旋钮</p>
+            <h2 id="keyboard-02-title">Q11 分体键盘 / 二号</h2>
+          </div>
+          <a class="fullscreen-link" href="./q11.html" data-fullscreen aria-label="全屏查看二号 Q11 键盘">全屏查看 <span aria-hidden="true">↗</span></a>
+        </div>
+        <dl class="specs">
+          <div><dt>布局</dt><dd>91 键 · 分体</dd></div>
+          <div><dt>结构</dt><dd>双旋钮 · 宏键</dd></div>
+          <div><dt>灯效</dt><dd>默认关闭</dd></div>
+        </dl>
+      </article>
+
+      <article class="keyboard-card" aria-labelledby="keyboard-03-title">
+        <div class="card-index" aria-hidden="true">03</div>
+        <div class="preview-shell">
+          <iframe class="preview-frame" src="./demo.html?embed=1&amp;layer=0&amp;rgb=0" title="三号键盘三维预览" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+        <div class="card-details">
+          <div>
+            <p class="card-kicker">主键层 · 彩虹呼吸</p>
+            <h2 id="keyboard-03-title">Sofle矮轴58% / 三号</h2>
+          </div>
+          <a class="fullscreen-link" href="./demo.html?layer=0&amp;rgb=0" data-fullscreen aria-label="全屏查看三号键盘">全屏查看 <span aria-hidden="true">↗</span></a>
+        </div>
+        <dl class="specs">
+          <div><dt>布局</dt><dd>分体 · 58 键</dd></div>
+          <div><dt>键帽</dt><dd>透明低矮</dd></div>
+          <div><dt>灯效</dt><dd>静态彩虹呼吸</dd></div>
+        </dl>
+      </article>
+
+      <article class="keyboard-card" aria-labelledby="keyboard-04-title">
+        <div class="card-index" aria-hidden="true">04</div>
+        <div class="preview-shell">
+          <iframe class="preview-frame" src="./demo.html?embed=1&amp;layer=2&amp;rgb=0" title="四号键盘三维预览" loading="lazy" allow="fullscreen" allowfullscreen></iframe>
+        </div>
+        <div class="card-details">
+          <div>
+            <p class="card-kicker">媒体层 · 彩虹呼吸</p>
+            <h2 id="keyboard-04-title">Sofle矮轴58% / 四号</h2>
+          </div>
+          <a class="fullscreen-link" href="./demo.html?layer=2&amp;rgb=0" data-fullscreen aria-label="全屏查看四号键盘">全屏查看 <span aria-hidden="true">↗</span></a>
+        </div>
+        <dl class="specs">
+          <div><dt>布局</dt><dd>分体 · 58 键</dd></div>
+          <div><dt>键层</dt><dd>媒体控制</dd></div>
+          <div><dt>灯效</dt><dd>静态彩虹呼吸</dd></div>
+        </dl>
+      </article>
+    </section>
+  </main>
+
+  <footer>
+    <p>四把键盘 / 一个持续更新的个人档案</p>
+    <a href="#top">回到顶部 ↑</a>
+  </footer>
+
+  <script type="module" src="./js/landing.js"></script>
 </body>
 </html>

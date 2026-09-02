@@ -8,17 +8,20 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { buildLayout } from './layout.js';
 import { buildKeyboard, legendTexture } from './keyboard.js';
 
-const SHOT = new URLSearchParams(location.search).has('shot');
+const params = new URLSearchParams(location.search);
+const SHOT = params.has('shot');
+const EMBED = params.has('embed');
 
 // ---------- renderer / scene ----------
 const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
 renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(devicePixelRatio, EMBED ? 1.35 : 2));
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.05;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+renderer.domElement.setAttribute('aria-label', '可交互的三维键盘模型');
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x07070b);
@@ -45,7 +48,7 @@ controls.maxDistance = 50;
 const key = new THREE.DirectionalLight(0xffffff, 1.25);
 key.position.set(6, 14, 8);
 key.castShadow = true;
-key.shadow.mapSize.set(2048, 2048);
+key.shadow.mapSize.set(EMBED ? 1024 : 2048, EMBED ? 1024 : 2048);
 key.shadow.camera.left = key.shadow.camera.bottom = -16;
 key.shadow.camera.right = key.shadow.camera.top = 16;
 key.shadow.bias = -0.0004;
@@ -225,7 +228,6 @@ function setLayer(i) {
   }
 }
 {
-  const params = new URLSearchParams(location.search);
   const l = params.get('layer');
   if (l !== null) setLayer(Math.min(2, Math.max(0, +l || 0)));
   const r = params.get('rgb');
