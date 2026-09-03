@@ -1,3 +1,9 @@
 real
 node_modules
 .img2threejs
+dist
+.scala-output.js
+.cache
+.bsp
+.metals
+.scala-build

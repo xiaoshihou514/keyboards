@@ -1,15 +1,25 @@
 {
   "name": "keyboards",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Three keyboard studies rendered with Scala.js and ThreeScalaJS",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "scala:check": "scala compile src/main/scala --js --server=false",
+    "scala:compile": "scala --power package src/main/scala --js --js-module-kind es -M keyboards.Main -o .scala-output.js --force --server=false",
+    "scala:watch": "scala --power package src/main/scala --js --js-module-kind es -M keyboards.Main -o .scala-output.js --force --watch --server=false",
+    "dev": "npm run scala:compile && concurrently -k -n scala,vite \"npm:scala:watch\" \"vite\"",
+    "build": "npm run scala:compile && vite build",
+    "preview": "vite preview",
+    "test": "npm run scala:check && npm run build"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
     "three": "^0.185.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "vite": "^8.0.0"
   }
 }
