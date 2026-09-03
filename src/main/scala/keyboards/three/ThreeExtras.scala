@@ -117,10 +117,6 @@ trait Intersection extends js.Object:
   val `object`: Object3D = js.native
 
 @js.native
-trait VialDocument extends js.Object:
-  val layout: js.Array[js.Array[js.Array[String | Int]]] = js.native
-
-@js.native
 trait ExtrudeOptions extends js.Object:
   var depth: Double = js.native
   var bevelEnabled: Boolean = js.native

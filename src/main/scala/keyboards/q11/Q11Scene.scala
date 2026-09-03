@@ -49,9 +49,7 @@ object Q11Scene:
       post: MeshStandardMaterial
   )
 
-  def start(document: VialDocument): Unit =
-    if document.layout.isEmpty || document.layout(0).length != 12 then
-      throw new IllegalArgumentException("real/keymap.vil must provide the Q11 12-row base matrix")
+  def start(layout: Q11Layout): Unit =
     val options = PageOptions.current()
     val context = SceneRuntime.create(options, SceneConfig(
       title = "可交互的 Q11 分体键盘三维模型",
@@ -83,8 +81,8 @@ object Q11Scene:
     val legends = new Q11LegendFactory()
     val glowTexture = TextureFactory.radialGlow()
     val keys = mutable.ArrayBuffer.empty[KeyState]
-    makeHalf("left", 0, board, document, materials, legends, glowTexture, keys)
-    makeHalf("right", 6, board, document, materials, legends, glowTexture, keys)
+    makeHalf("left", 0, board, layout, materials, legends, glowTexture, keys)
+    makeHalf("right", 6, board, layout, materials, legends, glowTexture, keys)
     val glowPoints = (0 until 8).map { index =>
       val x = -8.4 + index * 2.4
       val z = 0.2 + (index % 2) * 1.8
@@ -93,7 +91,7 @@ object Q11Scene:
       board.add(light)
       (light, x, z)
     }.toVector
-    var layer = requestedLayer(document.layout.length)
+    var layer = requestedLayer(layout.layerCount)
     var rgb = options.rgbEnabled && !options.flat
     def updateLegends(): Unit = keys.foreach { key =>
       val (primary, secondary) = Q11Keymap.presentation(key.layers, layer)
@@ -102,7 +100,7 @@ object Q11Scene:
     }
     def action(key: KeyState): Unit = key.layers.at(layer) match
       case KeyCode.Named(code) if code.matches("DF\\(\\d+\\)") =>
-        layer = math.max(0, math.min(document.layout.length - 1, code.filter(_.isDigit).toInt))
+        layer = math.max(0, math.min(layout.layerCount - 1, code.filter(_.isDigit).toInt))
         updateLegends()
       case KeyCode.Named("RM_ON") => rgb = true
       case KeyCode.Named("RM_OFF") => rgb = false
@@ -168,7 +166,7 @@ object Q11Scene:
     )
 
   private def makeHalf(
-      side: String, matrixOffset: Int, board: Group, document: VialDocument, materials: Materials,
+      side: String, matrixOffset: Int, board: Group, layout: Q11Layout, materials: Materials,
       legends: Q11LegendFactory, glowTexture: Texture, keys: mutable.ArrayBuffer[KeyState]
   ): Unit =
     val group = new Group()
@@ -186,17 +184,17 @@ object Q11Scene:
     val deck = steppedCase(side, width - 0.18, 0.12, CaseDepth - 0.18, materials.deck, s"$side-deck")
     deck.position.y = 0.32
     group.add(deck)
-    placeMatrix(group, side, matrixOffset, document, materials, legends, glowTexture, keys)
+    placeMatrix(group, side, matrixOffset, layout, materials, legends, glowTexture, keys)
     addEncoder(group, side, materials)
 
   private def placeMatrix(
-      parent: Group, side: String, offset: Int, document: VialDocument, materials: Materials,
+      parent: Group, side: String, offset: Int, layout: Q11Layout, materials: Materials,
       legends: Q11LegendFactory, glowTexture: Texture, keys: mutable.ArrayBuffer[KeyState]
   ): Unit =
     (0 until 6).foreach { row =>
-      val entries = document.layout(0)(offset + row).zipWithIndex.flatMap { (raw, column) =>
-        KeyCode.from(raw) match
-          case KeyCode.Named(code) if code != "KC_MUTE" => Some((code, column, Q11Keymap.layers(document, offset + row, column)))
+      val entries = layout.baseRow(offset + row).zipWithIndex.flatMap { (keyCode, column) =>
+        keyCode match
+          case KeyCode.Named(code) if code != "KC_MUTE" => Some((code, column, layout.keyLayers(offset + row, column)))
           case _ => None
       }.toVector
       val z = -2.55 + row * 1.02

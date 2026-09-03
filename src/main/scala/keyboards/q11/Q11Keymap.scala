@@ -1,18 +1,8 @@
 package keyboards.q11
 
-import scala.scalajs.js
-import keyboards.three.VialDocument
-
 enum KeyCode:
   case Empty
   case Named(value: String)
-
-object KeyCode:
-  def from(value: String | Int): KeyCode = value match
-    case number: Int if number == -1 => Empty
-    case text: String if text == "KC_NO" || text.isEmpty => Empty
-    case text: String => Named(text)
-    case _ => Empty
 
 final case class KeyLayers(values: Vector[KeyCode]):
   def at(layer: Int): KeyCode = values.lift(layer).getOrElse(KeyCode.Empty)
@@ -42,11 +32,6 @@ object Q11Keymap:
     "KC_RBRACKET" -> "}", "KC_BSLASH" -> "|", "KC_SCOLON" -> ":", "KC_QUOTE" -> "\"",
     "KC_COMMA" -> "<", "KC_DOT" -> ">", "KC_SLASH" -> "?"
   )
-
-  def layers(document: VialDocument, matrixRow: Int, column: Int): KeyLayers =
-    KeyLayers(document.layout.iterator.map { layer =>
-      layer.lift(matrixRow).flatMap(_.lift(column)).map(KeyCode.from).getOrElse(KeyCode.Empty)
-    }.toVector)
 
   def presentation(layers: KeyLayers, layer: Int): (String, String) = layers.at(layer) match
     case KeyCode.Empty => ("", "")
