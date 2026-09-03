@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import { resolve } from 'node:path';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? '/keyboards/' : '/',
   build: {
     rollupOptions: {
       input: {
@@ -12,4 +13,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
